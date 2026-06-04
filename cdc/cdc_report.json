@@ -1,0 +1,44 @@
+{
+  "design_name": "flashattention",
+  "tool": "manual_analysis",
+  "timestamp": "2026-06-04T23:30:00+08:00",
+  "clock_domains": [
+    {
+      "name": "clk_domain",
+      "clock": "clk",
+      "freq_mhz": 50,
+      "modules": ["fa_top", "fa_ctrl", "fa_dma", "fa_systolic", "fa_softmax", "fa_divider", "fa_buffer_mgr", "fa_regfile"]
+    }
+  ],
+  "reset_domains": [
+    {
+      "name": "rst_n_domain",
+      "reset": "rst_n",
+      "type": "async_assert_sync_deassert",
+      "synchronizer": "fa_top.rst_n_meta/rst_n_sync (2-FF)",
+      "modules_using_synced_reset": ["fa_ctrl", "fa_dma", "fa_systolic", "fa_softmax", "fa_divider", "fa_buffer_mgr", "fa_regfile"]
+    }
+  ],
+  "cdc_analysis": {
+    "total_cross_domain_paths": 0,
+    "reason": "Single clock domain (clk). All modules share the same 50MHz clock. No cross-clock-domain register-to-register paths exist.",
+    "violations": []
+  },
+  "rdc_analysis": {
+    "total_cross_domain_paths": 0,
+    "reason": "Single reset domain. rst_n is externally asserted asynchronously, then synchronized through a 2-FF synchronizer (rst_n_meta -> rst_n_sync) before distribution to all internal modules as rst_n_int. No reset domain crossings exist.",
+    "violations": []
+  },
+  "clean": true,
+  "valid": true,
+  "violations": [],
+  "waivers": [],
+  "notes": [
+    "Design has single clock domain: clk @ 50MHz",
+    "Reset: rst_n (async assert) synchronized via 2-FF synchronizer to rst_n_int",
+    "All 8 submodules use rst_n_int (synchronized reset)",
+    "No multi-clock paths, no CDC crossings",
+    "No reset domain crossings (single reset, properly synchronized)",
+    "Scan chain is loopback (test_so=test_si) - no DFT CDC concerns"
+  ]
+}

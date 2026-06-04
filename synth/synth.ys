@@ -1,0 +1,20 @@
+# FlashAttention Accelerator - Yosys Synthesis Script
+read_verilog -sv rtl/fa_regfile.sv
+read_verilog -sv rtl/fa_buffer_mgr.sv
+read_verilog -sv rtl/fa_divider.sv
+read_verilog -sv rtl/fa_softmax.sv
+read_verilog -sv rtl/fa_systolic.sv
+read_verilog -sv rtl/fa_dma.sv
+read_verilog -sv rtl/fa_ctrl.sv
+read_verilog -sv rtl/fa_top.sv
+
+hierarchy -top fa_top -check
+proc
+opt
+flatten
+opt
+techmap
+opt
+stat
+write_verilog synth/netlist.v
+write_json synth/netlist.json

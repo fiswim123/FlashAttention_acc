@@ -1,0 +1,88 @@
+{
+  "design_name": "flashattention",
+  "top_module": "fa_top",
+  "tool": "yosys",
+  "tool_version": "0.52",
+  "synthesis_mode": "asap7_technology_mapping",
+  "pdk": "ASAP7 7nm (simplified liberty)",
+  "date": "2026-06-05",
+
+  "synthesis_results": {
+    "total_cells": 76287,
+    "sequential_cells": 3929,
+    "combinational_cells": 72358,
+    "wire_bits": 171765,
+    "memory_bits": 67584,
+    "memory_bytes": 8448,
+    "warnings": 14,
+    "errors": 0
+  },
+
+  "cell_breakdown": {
+    "DFFHQx1": 896,
+    "DFFNRx1": 3033,
+    "AND2x1": 28332,
+    "OR2x1": 11597,
+    "XOR2x1": 16433,
+    "MUX2x1": 14698,
+    "INVx1": 1139,
+    "memory_read": 88,
+    "memory_write": 64
+  },
+
+  "area_estimate": {
+    "note": "Using simplified ASAP7 liberty cell areas",
+    "total_area_units": 118946,
+    "equivalent_2input_nand_gates": "~76K gates",
+    "budget": "1,800K gates",
+    "utilization_pct": 4.2
+  },
+
+  "timing_analysis": {
+    "note": "STA limited by simplified liberty file. Full timing requires complete ASAP7 PDK.",
+    "target_freq_mhz": 50,
+    "target_period_ns": 20,
+    "clock_uncertainty_ns": 0.5,
+    "io_delay_ns": 2.0,
+    "status": "PENDING_FULL_PDK"
+  },
+
+  "power_estimate": {
+    "note": "Requires activity factors for accurate power analysis",
+    "status": "PENDING"
+  },
+
+  "memory_usage": {
+    "register_file": "~2KB (16 regs x 32-bit)",
+    "exp_lut": "~512B (256 entries x 16-bit)",
+    "k_tile_buffer": "~2KB (Bc=16 x d=64 x 16-bit)",
+    "v_tile_buffer": "~2KB (Bc=16 x d=64 x 16-bit)",
+    "q_buffer": "~128B (1 row x d=64 x 16-bit)",
+    "o_buffer": "~128B (1 row x d=64 x 16-bit)",
+    "total": "~8.4KB"
+  },
+
+  "files": {
+    "netlist": "synth/netlist_asap7.v",
+    "netlist_json": "synth/netlist_asap7.json",
+    "sdc": "constraints/flashattention.sdc",
+    "synthesis_log": "synth/synth_asap7_v2.ys"
+  },
+
+  "inputs": [
+    {"path": "designs/flashattention/rtl_artifact.json", "sha256": "1b93c92c275353ad631e4c6870a99aee08c8444a719e1bb811b977a184a78526"},
+    {"path": "designs/flashattention/mas/mas.json", "sha256": "cd3391e0213e9e24c89b20e9e9a484ac753c0173c8277fe4345860300fd5e273"},
+    {"path": "designs/flashattention/test_report.json", "sha256": "78d6b68c9b3890195b6b9d66cf32d006a89c2935a8a52516fca86a9a93fb346f"}
+  ],
+  "outputs": [
+    {"path": "designs/flashattention/synth/netlist_asap7.v", "sha256": "9422039ce4a08cc75a4136c9d0bac7e095bc024a9ca452e0dbd1e8dfaf5b92e4"},
+    {"path": "designs/flashattention/synth_report.json", "sha256": "6162ce60c18cb0070bea27e414543691ac410523b31103de5866592ef85685de"}
+  ],
+
+  "next_steps": [
+    "Obtain complete ASAP7 PDK with proper liberty files",
+    "Re-run synthesis with ABC optimization",
+    "Run full STA timing analysis",
+    "Iterate until WNS >= 0 at 50MHz"
+  ]
+}
