@@ -1,0 +1,19 @@
+[PASS] Test 1: Reset sync released
+[PASS] Test 2: Scan loopback A5 = 0x000000a5
+[PASS] Test 3: Scan loopback 5A = 0x0000005a
+[FAIL] Test 4: REV via top = 0x00000000, exp 0xfa000100
+[PASS] Test 5: Q_BASE_L = 0x00001000
+[PASS] Test 6: STRIDE = 0x00000100
+[PASS] Test 7: STATUS not busy = 0x00000000
+[PASS] Test 8: STATUS busy after start = 0x00000001
+[PASS] Test 9: CYCLES > 0 = 719
+[FAIL] Test 10: CAUSAL_EN = 0x00000000, exp 0x00000001
+[FAIL] Test 11: After soft reset not busy = 0x00000001, exp 0x00000000
+========================================
+  fa_top: 8 passed, 3 failed
+========================================
+25461580216795114449569663308
+- ../tb/tb_fa_top.sv:180: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 23us; walltime 0.062 s; speed 365.648 us/s
+- Verilator: cpu 0.062 s on 1 threads; alloced 23 MB

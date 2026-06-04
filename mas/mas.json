@@ -1,0 +1,268 @@
+{
+  "design_name": "flashattention",
+  "top_module": "fa_top",
+  "target_freq_mhz": 50,
+  "target_pdk": "asap7",
+  "modules": [
+    {
+      "name": "fa_top",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "test_mode", "direction": "input", "width": 2, "type": "test"},
+          {"name": "test_se", "direction": "input", "width": 1, "type": "test"},
+          {"name": "test_si", "direction": "input", "width": 8, "type": "test"},
+          {"name": "test_so", "direction": "output", "width": 8, "type": "test"}
+        ]
+      },
+      "fsm_ref": "mas/M01_fa_top/FSM.md",
+      "datapath_ref": "mas/M01_fa_top/datapath.md"
+    },
+    {
+      "name": "fa_ctrl",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "start", "direction": "input", "width": 1, "type": "control"},
+          {"name": "busy", "direction": "output", "width": 1, "type": "status"},
+          {"name": "done", "direction": "output", "width": 1, "type": "status"},
+          {"name": "error", "direction": "output", "width": 1, "type": "status"},
+          {"name": "causal_en", "direction": "input", "width": 1, "type": "config"},
+          {"name": "dma_start", "direction": "output", "width": 1, "type": "control"},
+          {"name": "dma_done", "direction": "input", "width": 1, "type": "status"},
+          {"name": "dma_cmd", "direction": "output", "width": 2, "type": "control"},
+          {"name": "mac_start", "direction": "output", "width": 1, "type": "control"},
+          {"name": "mac_done", "direction": "input", "width": 1, "type": "status"},
+          {"name": "mac_mode", "direction": "output", "width": 1, "type": "control"},
+          {"name": "sm_start", "direction": "output", "width": 1, "type": "control"},
+          {"name": "sm_done", "direction": "input", "width": 1, "type": "status"},
+          {"name": "div_start", "direction": "output", "width": 1, "type": "control"},
+          {"name": "div_done", "direction": "input", "width": 1, "type": "status"},
+          {"name": "row_cnt", "direction": "output", "width": 8, "type": "count"},
+          {"name": "tile_cnt", "direction": "output", "width": 4, "type": "count"},
+          {"name": "buf_sel", "direction": "output", "width": 1, "type": "control"},
+          {"name": "acc_clear", "direction": "output", "width": 1, "type": "control"},
+          {"name": "cycle_cnt", "direction": "output", "width": 32, "type": "count"},
+          {"name": "soft_reset", "direction": "input", "width": 1, "type": "control"}
+        ]
+      },
+      "fsm_ref": "mas/M02_fa_ctrl/FSM.md",
+      "datapath_ref": "mas/M02_fa_ctrl/datapath.md"
+    },
+    {
+      "name": "fa_dma",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "dma_start", "direction": "input", "width": 1, "type": "control"},
+          {"name": "dma_done", "direction": "output", "width": 1, "type": "status"},
+          {"name": "dma_cmd", "direction": "input", "width": 2, "type": "control"},
+          {"name": "m_axi_awaddr", "direction": "output", "width": 64, "type": "address"},
+          {"name": "m_axi_awlen", "direction": "output", "width": 8, "type": "control"},
+          {"name": "m_axi_awsize", "direction": "output", "width": 3, "type": "control"},
+          {"name": "m_axi_awburst", "direction": "output", "width": 2, "type": "control"},
+          {"name": "m_axi_awvalid", "direction": "output", "width": 1, "type": "valid"},
+          {"name": "m_axi_awready", "direction": "input", "width": 1, "type": "ready"},
+          {"name": "m_axi_wdata", "direction": "output", "width": 128, "type": "data"},
+          {"name": "m_axi_wstrb", "direction": "output", "width": 16, "type": "control"},
+          {"name": "m_axi_wlast", "direction": "output", "width": 1, "type": "control"},
+          {"name": "m_axi_wvalid", "direction": "output", "width": 1, "type": "valid"},
+          {"name": "m_axi_wready", "direction": "input", "width": 1, "type": "ready"},
+          {"name": "m_axi_bresp", "direction": "input", "width": 2, "type": "status"},
+          {"name": "m_axi_bvalid", "direction": "input", "width": 1, "type": "valid"},
+          {"name": "m_axi_bready", "direction": "output", "width": 1, "type": "ready"},
+          {"name": "m_axi_araddr", "direction": "output", "width": 64, "type": "address"},
+          {"name": "m_axi_arlen", "direction": "output", "width": 8, "type": "control"},
+          {"name": "m_axi_arsize", "direction": "output", "width": 3, "type": "control"},
+          {"name": "m_axi_arburst", "direction": "output", "width": 2, "type": "control"},
+          {"name": "m_axi_arvalid", "direction": "output", "width": 1, "type": "valid"},
+          {"name": "m_axi_arready", "direction": "input", "width": 1, "type": "ready"},
+          {"name": "m_axi_rdata", "direction": "input", "width": 128, "type": "data"},
+          {"name": "m_axi_rresp", "direction": "input", "width": 2, "type": "status"},
+          {"name": "m_axi_rlast", "direction": "input", "width": 1, "type": "control"},
+          {"name": "m_axi_rvalid", "direction": "input", "width": 1, "type": "valid"},
+          {"name": "m_axi_rready", "direction": "output", "width": 1, "type": "ready"}
+        ]
+      },
+      "fsm_ref": "mas/M03_fa_dma/FSM.md",
+      "datapath_ref": "mas/M03_fa_dma/datapath.md"
+    },
+    {
+      "name": "fa_systolic",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "mac_start", "direction": "input", "width": 1, "type": "control"},
+          {"name": "mac_done", "direction": "output", "width": 1, "type": "status"},
+          {"name": "mac_mode", "direction": "input", "width": 1, "type": "control"},
+          {"name": "q_data", "direction": "input", "width": 256, "type": "data"},
+          {"name": "kv_data", "direction": "input", "width": 256, "type": "data"},
+          {"name": "score_in", "direction": "input", "width": 256, "type": "data"},
+          {"name": "acc_out", "direction": "output", "width": 640, "type": "data"},
+          {"name": "acc_clear", "direction": "input", "width": 1, "type": "control"}
+        ]
+      },
+      "fsm_ref": "mas/M04_fa_systolic/FSM.md",
+      "datapath_ref": "mas/M04_fa_systolic/datapath.md"
+    },
+    {
+      "name": "fa_softmax",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "sm_start", "direction": "input", "width": 1, "type": "control"},
+          {"name": "sm_done", "direction": "output", "width": 1, "type": "status"},
+          {"name": "score", "direction": "input", "width": 256, "type": "data"},
+          {"name": "m_old", "direction": "input", "width": 40, "type": "data"},
+          {"name": "l_old", "direction": "input", "width": 40, "type": "data"},
+          {"name": "m_new", "direction": "output", "width": 40, "type": "data"},
+          {"name": "l_new", "direction": "output", "width": 40, "type": "data"},
+          {"name": "correction", "direction": "output", "width": 16, "type": "data"},
+          {"name": "exp_out", "direction": "output", "width": 256, "type": "data"},
+          {"name": "causal_mask", "direction": "input", "width": 16, "type": "control"}
+        ]
+      },
+      "fsm_ref": "mas/M05_fa_softmax/FSM.md",
+      "datapath_ref": "mas/M05_fa_softmax/datapath.md"
+    },
+    {
+      "name": "fa_divider",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "div_start", "direction": "input", "width": 1, "type": "control"},
+          {"name": "div_done", "direction": "output", "width": 1, "type": "status"},
+          {"name": "dividend", "direction": "input", "width": 40, "type": "data"},
+          {"name": "divisor", "direction": "input", "width": 40, "type": "data"},
+          {"name": "quotient", "direction": "output", "width": 16, "type": "data"},
+          {"name": "busy", "direction": "output", "width": 1, "type": "status"}
+        ]
+      },
+      "fsm_ref": "mas/M06_fa_divider/FSM.md",
+      "datapath_ref": "mas/M06_fa_divider/datapath.md"
+    },
+    {
+      "name": "fa_buffer_mgr",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "dma_wr_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "dma_wr_addr", "direction": "input", "width": 12, "type": "address"},
+          {"name": "dma_wr_data", "direction": "input", "width": 128, "type": "data"},
+          {"name": "dma_rd_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "dma_rd_addr", "direction": "input", "width": 12, "type": "address"},
+          {"name": "dma_rd_data", "direction": "output", "width": 128, "type": "data"},
+          {"name": "mac_q_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "mac_q_data", "direction": "output", "width": 256, "type": "data"},
+          {"name": "mac_k_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "mac_k_data", "direction": "output", "width": 256, "type": "data"},
+          {"name": "mac_v_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "mac_v_data", "direction": "output", "width": 256, "type": "data"},
+          {"name": "o_wr_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "o_wr_data", "direction": "input", "width": 256, "type": "data"},
+          {"name": "buf_sel", "direction": "input", "width": 1, "type": "control"},
+          {"name": "lut_rd_en", "direction": "input", "width": 1, "type": "control"},
+          {"name": "lut_rd_addr", "direction": "input", "width": 8, "type": "address"},
+          {"name": "lut_rd_data", "direction": "output", "width": 16, "type": "data"}
+        ]
+      },
+      "fsm_ref": "mas/M07_fa_buffer_mgr/FSM.md",
+      "datapath_ref": "mas/M07_fa_buffer_mgr/datapath.md"
+    },
+    {
+      "name": "fa_regfile",
+      "reuse": "none",
+      "interface": {
+        "ports": [
+          {"name": "clk", "direction": "input", "width": 1, "type": "clock"},
+          {"name": "rst_n", "direction": "input", "width": 1, "type": "reset"},
+          {"name": "s_axil_awaddr", "direction": "input", "width": 6, "type": "address"},
+          {"name": "s_axil_awvalid", "direction": "input", "width": 1, "type": "valid"},
+          {"name": "s_axil_awready", "direction": "output", "width": 1, "type": "ready"},
+          {"name": "s_axil_wdata", "direction": "input", "width": 32, "type": "data"},
+          {"name": "s_axil_wstrb", "direction": "input", "width": 4, "type": "control"},
+          {"name": "s_axil_wvalid", "direction": "input", "width": 1, "type": "valid"},
+          {"name": "s_axil_wready", "direction": "output", "width": 1, "type": "ready"},
+          {"name": "s_axil_bresp", "direction": "output", "width": 2, "type": "status"},
+          {"name": "s_axil_bvalid", "direction": "output", "width": 1, "type": "valid"},
+          {"name": "s_axil_bready", "direction": "input", "width": 1, "type": "ready"},
+          {"name": "s_axil_araddr", "direction": "input", "width": 6, "type": "address"},
+          {"name": "s_axil_arvalid", "direction": "input", "width": 1, "type": "valid"},
+          {"name": "s_axil_arready", "direction": "output", "width": 1, "type": "ready"},
+          {"name": "s_axil_rdata", "direction": "output", "width": 32, "type": "data"},
+          {"name": "s_axil_rresp", "direction": "output", "width": 2, "type": "status"},
+          {"name": "s_axil_rvalid", "direction": "output", "width": 1, "type": "valid"},
+          {"name": "s_axil_rready", "direction": "input", "width": 1, "type": "ready"}
+        ]
+      },
+      "fsm_ref": "mas/M08_fa_regfile/FSM.md",
+      "datapath_ref": "mas/M08_fa_regfile/datapath.md"
+    }
+  ],
+  "clock_domains": [
+    {
+      "name": "clk_domain",
+      "freq_mhz": 50,
+      "source": "external clock input"
+    }
+  ],
+  "io_timing": {
+    "inputs": [
+      {"name": "clk", "type": "clock", "period_ns": 20},
+      {"name": "rst_n", "type": "async_reset", "min_width_ns": 40},
+      {"name": "s_axil_*", "type": "axi4lite_slave", "setup_ns": 5, "hold_ns": 0},
+      {"name": "m_axi_*_ready", "type": "axi4_master", "setup_ns": 5, "hold_ns": 0}
+    ],
+    "outputs": [
+      {"name": "s_axi_*", "type": "axi4lite_slave", "delay_ns": 5},
+      {"name": "m_axi_*", "type": "axi4_master", "delay_ns": 5}
+    ]
+  },
+  "io_ring": [
+    {"side": "N", "pads": ["clk", "rst_n", "test_mode[1:0]", "test_se"]},
+    {"side": "S", "pads": ["s_axil_awaddr[5:0]", "s_axil_wdata[31:0]", "s_axil_araddr[5:0]"]},
+    {"side": "E", "pads": ["m_axi_awaddr[63:0]", "m_axi_wdata[127:0]", "m_axi_araddr[63:0]"]},
+    {"side": "W", "pads": ["test_si[7:0]", "test_so[7:0]"]}
+  ],
+  "cdc_waivers": [],
+  "path_exceptions": [],
+  "area_budget_um2": 50000,
+  "power_budget_mw": 50,
+  "inputs": [
+    {"path": "idea/parsed_idea.json", "sha256": "placeholder"},
+    {"path": "PRD.md", "sha256": "placeholder"},
+    {"path": "arch_spec/block_overview.md", "sha256": "placeholder"},
+    {"path": "arch_spec/block_diagram.md", "sha256": "placeholder"},
+    {"path": "arch_spec/theory_of_operation.md", "sha256": "placeholder"},
+    {"path": "arch_spec/interface_spec.md", "sha256": "placeholder"},
+    {"path": "arch_spec/register_map.md", "sha256": "placeholder"},
+    {"path": "arch_spec/design_details.md", "sha256": "placeholder"},
+    {"path": "arch_spec/clock_reset_spec.md", "sha256": "placeholder"},
+    {"path": "arch_spec/power_spec.md", "sha256": "placeholder"},
+    {"path": "arch_spec/dft_spec.md", "sha256": "placeholder"},
+    {"path": "arch_spec/verification_checklist.md", "sha256": "placeholder"},
+    {"path": "arch_spec/design_notes.md", "sha256": "placeholder"}
+  ],
+  "outputs": [
+    {"path": "mas/mas.md", "sha256": "placeholder"},
+    {"path": "mas/mas.json", "sha256": "placeholder"},
+    {"path": "mas/module_tree.md", "sha256": "placeholder"},
+    {"path": "mas/plan.md", "sha256": "placeholder"},
+    {"path": "mas/verif_plan_seed.md", "sha256": "placeholder"},
+    {"path": "mas/dft_plan_seed.md", "sha256": "placeholder"}
+  ]
+}

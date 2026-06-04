@@ -1,0 +1,21 @@
+[FAIL] Test 1: 2.0/1.0=2.0 = 0x0002, exp 0x0200
+[FAIL] Test 2: 1.0/1.0=1.0 = 0x0001, exp 0x0100
+[FAIL] Test 3: 3.0/2.0=1.5 = 0x0001, exp 0x0180
+[FAIL] Test 4: 7.0/4.0=1.75 = 0x0001, exp 0x01c0
+[FAIL] Test 5: 0.5/2.0=0.25 = 0x0000, exp 0x0040
+[PASS] Test 6: Div by zero = 0x0000
+[FAIL] Test 7: 127.996/1.0 = 0x007f, exp 0x7fff
+[PASS] Test 8: busy during div
+[PASS] Test 9: busy cleared after div
+[PASS] Test 10: 0/5.0=0 = 0x0000
+[FAIL] Test 11: 10.0/10.0=1.0 = 0x0001, exp 0x0100
+[PASS] Test 12: div_done not early
+[PASS] Test 13: div_done cleared
+========================================
+  fa_divider: 6 passed, 7 failed
+========================================
+25461580216795114449569663308
+- ../tb/tb_fa_divider.sv:105: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 2us; walltime 0.001 s; speed 1.639 ms/s
+- Verilator: cpu 0.001 s on 1 threads; alloced 13 MB

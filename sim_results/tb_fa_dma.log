@@ -1,0 +1,23 @@
+[PASS] Test 1: Q addr = 0x0000000000001000
+[PASS] Test 2: Q arlen = 0x0000000000000007
+[PASS] Test 3: Q dma_done
+[PASS] Test 4: K addr = 0x0000000000002000
+[PASS] Test 5: K arlen = 0x000000000000000f
+[PASS] Test 6: K dma_done
+[PASS] Test 7: K tile1 addr = 0x0000000000003000
+[PASS] Test 8: O addr = 0x0000000000004000
+[PASS] Test 9: O awlen = 0x0000000000000007
+[PASS] Test 10: O dma_done
+[PASS] Test 11: buf_wr_en during R_RECV
+[PASS] Test 12: dma_done pulse cleared
+[PASS] Test 13: Q row5 addr = 0x0000000000001500
+[PASS] Test 14: arsize=16B
+[PASS] Test 15: arburst=INCR
+========================================
+  fa_dma: 15 passed, 0 failed
+========================================
+25461580216795114449737438035
+- ../tb/tb_fa_dma.sv:168: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 1us; walltime 0.010 s; speed 127.977 us/s
+- Verilator: cpu 0.010 s on 1 threads; alloced 15 MB

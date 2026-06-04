@@ -1,0 +1,16 @@
+{
+  "design_name": "flashattention",
+  "protocols": ["axi4-lite", "axi4"],
+  "target_freq_mhz": 50,
+  "target_pdk": "asap7",
+  "clock_domains": [
+    {
+      "name": "clk",
+      "freq_mhz": 50
+    }
+  ],
+  "reset_domains": ["rst_n"],
+  "area_budget_um2": 291000,
+  "power_budget_mw": 50,
+  "notes": "FlashAttention-style SDPA accelerator for Cadence competition. S=256, d=64, single batch/head, Q8.8 fixed-point I/O (16-bit), 40-bit accumulation, AXI4-Lite control + AXI4 Master DMA, online softmax + tiling, causal mask mandatory, <300K cycles latency, <=2M equivalent gates. Key constraint: must NOT store S*S attention matrix."
+}

@@ -1,0 +1,70 @@
+{
+  "design_name": "flashattention",
+  "top_module": "fa_top",
+  "modules": [
+    "fa_regfile",
+    "fa_buffer_mgr",
+    "fa_divider",
+    "fa_softmax",
+    "fa_systolic",
+    "fa_dma",
+    "fa_ctrl",
+    "fa_top"
+  ],
+  "file_list": "designs/flashattention/rtl/file_list.f",
+  "inputs": [
+    {"path": "designs/flashattention/mas/mas.md", "sha256": "052288f7d75bfcdcf7362293ef2d6e2ca7fc352909815143c8939b3352b5790f"},
+    {"path": "designs/flashattention/mas/mas.json", "sha256": "cd3391e0213e9e24c89b20e9e9a484ac753c0173c8277fe4345860300fd5e273"},
+    {"path": "designs/flashattention/mas/module_tree.md", "sha256": "be6c1e1214d450542687cea640ac3967c179930d48161144bc166d022f54d9fc"},
+    {"path": "designs/flashattention/mas/plan.md", "sha256": "aa395d95564ccce089791b60caaed7d1115076c162d3e9858e39dbd1588f7737"},
+    {"path": "designs/flashattention/mas/verif_plan_seed.md", "sha256": "d430303d31d64c599af2db08477062c27fae1bbe65d9abc780b3c8e50b57727c"},
+    {"path": "designs/flashattention/mas/dft_plan_seed.md", "sha256": "b69374f7b87cb3d94fb35fabc96efd92d80bb7ba1a89f8900e755ba07be29469"},
+    {"path": "designs/flashattention/mas/M01_fa_top/FSM.md", "sha256": "35eb6808382b54a0b7e576e9b02c84dc943422ae208f4c2185ef9681eb49b532"},
+    {"path": "designs/flashattention/mas/M01_fa_top/datapath.md", "sha256": "920de789590e79cd7b86126efd96852ec1587feb7f051a3e1b97068007ec64de"},
+    {"path": "designs/flashattention/mas/M02_fa_ctrl/FSM.md", "sha256": "bfa2c9fb9bf1fb9968a74c0b9a42c60fecc24483455a922120d8043355fac5f3"},
+    {"path": "designs/flashattention/mas/M02_fa_ctrl/datapath.md", "sha256": "fca81e65625c9c8a0d95eacbc59bf11bad57ba7ca4b2dbf46364ee9fd90041e7"},
+    {"path": "designs/flashattention/mas/M03_fa_dma/FSM.md", "sha256": "29160c3f06fe6b61b8fedb842e8745dbe5bc0569abadc4f12ba4660cf87f7b4b"},
+    {"path": "designs/flashattention/mas/M03_fa_dma/datapath.md", "sha256": "7320e4822b9c1ee94b047156f57310757e3f119b6a7eb40a09a83eccdde3381d"},
+    {"path": "designs/flashattention/mas/M04_fa_systolic/FSM.md", "sha256": "dd292e4dfc471c71a1de3f04e5e3847d03a2356744c8dd6a4a3fbaa82c4367fa"},
+    {"path": "designs/flashattention/mas/M04_fa_systolic/datapath.md", "sha256": "45dd1992ceb7d76a86d50119db676f7727c6aa5063fc40e6335ba9f67ba32202"},
+    {"path": "designs/flashattention/mas/M05_fa_softmax/FSM.md", "sha256": "f2d771c5be65d3b99fba54ed9ca3af1651e1a421850d6fecd4d70de86e72559f"},
+    {"path": "designs/flashattention/mas/M05_fa_softmax/datapath.md", "sha256": "9ef18c52e4a6cf6357c9a42b52000c439a2268bb609ef3808b7e48f70008be95"},
+    {"path": "designs/flashattention/mas/M06_fa_divider/FSM.md", "sha256": "8cd0f867fd194797784f24dde32a9ecbf634c8f889e1a70ba9b85d97e03641f8"},
+    {"path": "designs/flashattention/mas/M06_fa_divider/datapath.md", "sha256": "dda50151a6209d92da164b68fb3fc7d0cd26815aa09a6fee5529cfa356d80e51"},
+    {"path": "designs/flashattention/mas/M07_fa_buffer_mgr/FSM.md", "sha256": "ac7b8bc619f10785977f2ebc23e147b9b4b511346c0930cd913a94849a6097ba"},
+    {"path": "designs/flashattention/mas/M07_fa_buffer_mgr/datapath.md", "sha256": "92c37919989eb004878fea3dd9985acaf0cd006097862a0cb478bd8bdc500b07"},
+    {"path": "designs/flashattention/mas/M08_fa_regfile/FSM.md", "sha256": "4a222f197b432d9f5eae1fcf784c793e286d90ef4998f193cc6271e070e659ae"},
+    {"path": "designs/flashattention/mas/M08_fa_regfile/datapath.md", "sha256": "e78322afb2651dc8970775f9b946cab8b55b2dcbeebeb921d59f3f525d2e581b"}
+  ],
+  "outputs": [
+    {"path": "designs/flashattention/rtl/fa_regfile.sv", "sha256": "69d035c3cf2e34d708bdadb20cf8536411ab60242a015c6e2afd690ed9283f8d"},
+    {"path": "designs/flashattention/rtl/fa_buffer_mgr.sv", "sha256": "41c78134259c33d36b1ef252f4ca8e52bbb51ba0a931c5fe4d7c5cf10e6b642e"},
+    {"path": "designs/flashattention/rtl/fa_divider.sv", "sha256": "0f6a370d4ad933d767a1f9942c995f7270d4e788b830545f2435fd9d04cfde24"},
+    {"path": "designs/flashattention/rtl/fa_softmax.sv", "sha256": "1a429643ed0e3c528307538a7acc7f11cb2ce6a1decddd2da63a90df2e2edd28"},
+    {"path": "designs/flashattention/rtl/fa_systolic.sv", "sha256": "67b023c874112ecb761c791ade845b478ec743cfd4c4080808480d5c2b13d7d6"},
+    {"path": "designs/flashattention/rtl/fa_dma.sv", "sha256": "ea5dcea3418cdb4fcf406ba10a20c1e32604916b234a3eeff4c43000d192082d"},
+    {"path": "designs/flashattention/rtl/fa_ctrl.sv", "sha256": "b894bb29a147d82974f4b1af71e8d312f53c82dd373bd18b2337d824b2fbc279"},
+    {"path": "designs/flashattention/rtl/fa_top.sv", "sha256": "8974fb1add0db9fee7c6d36f1f6c1ba58af806845ee9959c73d76f295863c7fe"},
+    {"path": "designs/flashattention/rtl/file_list.f", "sha256": "32322e21f291e3a324d905730c1685d7e55ee1d962f05ad1d46c36313c13b015"}
+  ],
+  "lint_clean": true,
+  "lint_tool": "verilator 5.032",
+  "lint_errors": 0,
+  "lint_warnings": 13,
+  "lint_warnings_detail": [
+    "PINCONNECTEMPTY: empty port connections in fa_top (unconnected outputs)",
+    "WIDTHEXPAND: width mismatches in fa_buffer_mgr (array index sizing)",
+    "UNUSEDSIGNAL: unused signals in various modules (cosmetic)",
+    "UNUSEDPARAM: unused ADDR_CFG parameter in fa_regfile"
+  ],
+  "iteration_count": 3,
+  "fix_iter": 0,
+  "global_fix_iter": 0,
+  "timestamp": "2026-06-04T18:30:00+08:00",
+  "notes": [
+    "MAS sha256 values were placeholders from architect; actual hashes computed and stored in inputs[]",
+    "fa_top has several TODO connections for softmax<->buffer_mgr and divider<->softmax data paths",
+    "Scan chain is loopback (test_so=test_si) pending synthesis tool stitching",
+    "Exp LUT uses behavioral approximation; synthesis will infer ROM from buffer_mgr"
+  ]
+}

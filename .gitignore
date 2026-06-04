@@ -1,0 +1,28 @@
+# Build artifacts
+sim_results/obj_*/
+*.o
+*.a
+*.so
+*.exe
+*.vcd
+*.fst
+
+# Zone.Identifier (WSL)
+*:Zone.Identifier
+
+# Verilator generated
+sim_results/Vtb_*
+sim_results/verilated*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude
+.claude/

@@ -1,0 +1,36 @@
+[FAIL] Test 1: acc[0] QK = 4063232, exp 4194304
+[PASS] Test 2: acc[1] QK zero = 0
+[FAIL] Test 3: acc[0] zero = 131072, exp 0
+[FAIL] Test 4: acc[0] SV = 4063232, exp 4194304
+[FAIL] Test 5: acc[0] neg*pos = -3932160, exp -4194304
+[PASS] Test 6: mac_done not early
+[PASS] Test 7: mac_done cleared
+[FAIL] Test 8: acc[0] accumulated = 8257536, exp 8388608
+  acc[0] = 4194304
+  acc[1] = 4063232
+  acc[2] = 4063232
+  acc[3] = 4063232
+  acc[4] = 4063232
+  acc[5] = 4063232
+  acc[6] = 4063232
+  acc[7] = 4063232
+  acc[8] = 4063232
+  acc[9] = 4063232
+  acc[10] = 4063232
+  acc[11] = 4063232
+  acc[12] = 4063232
+  acc[13] = 4063232
+  acc[14] = 4063232
+  acc[15] = 4063232
+[PASS] Test 9: acc[0] all16 = 4194304
+[FAIL] Test 10: acc[15] all16 = 4063232, exp 4194304
+[FAIL] Test 11: acc[0] asymmetric = 230272, exp 102400
+[FAIL] Test 12: acc[15] asymmetric = 230272, exp 102400
+========================================
+  fa_systolic: 4 passed, 8 failed
+========================================
+25461580216795114449569663308
+- ../tb/tb_fa_systolic.sv:118: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 6us; walltime 0.013 s; speed 465.072 us/s
+- Verilator: cpu 0.013 s on 1 threads; alloced 15 MB

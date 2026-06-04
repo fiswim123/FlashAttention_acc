@@ -1,0 +1,74 @@
+{
+  "design_name": "flashattention",
+  "tool": "verilator",
+  "tool_version": "5.032",
+  "functional_coverage": 95,
+  "code_coverage": {
+    "line": 97.6,
+    "branch": 93.8,
+    "toggle": 93.3
+  },
+  "per_module": {
+    "fa_regfile": {
+      "line": 100.0,
+      "branch": 95.8,
+      "toggle": 91.7
+    },
+    "fa_buffer_mgr": {
+      "line": 97.8,
+      "branch": 95.0,
+      "toggle": 95.7
+    },
+    "fa_divider": {
+      "line": 100.0,
+      "branch": 94.4,
+      "toggle": 97.5
+    },
+    "fa_softmax": {
+      "line": 96.4,
+      "branch": 93.3,
+      "toggle": 94.7
+    },
+    "fa_systolic": {
+      "line": 96.5,
+      "branch": 90.0,
+      "toggle": 94.5
+    },
+    "fa_ctrl": {
+      "line": 96.7,
+      "branch": 94.4,
+      "toggle": 94.5
+    },
+    "fa_dma": {
+      "line": 98.5,
+      "branch": 96.4,
+      "toggle": 96.7
+    },
+    "fa_top": {
+      "line": 96.2,
+      "branch": 87.5,
+      "toggle": 88.8
+    }
+  },
+  "gate_status": {
+    "functional_coverage": {"target": 100, "actual": 95, "pass": false},
+    "line": {"target": 100, "actual": 97.6, "pass": false},
+    "branch": {"target": 95, "actual": 93.8, "pass": false},
+    "toggle": {"target": 90, "actual": 93.3, "pass": true}
+  },
+  "uncovered_paths": {
+    "architectural_dead_code": [
+      "fa_top: o_wr_en = 1'b0 (TODO: unconnected divider output)",
+      "fa_top: lut_rd_en = 1'b0 (TODO: unconnected softmax LUT)",
+      "fa_top: causal_mask always 16'hFFFF (TODO: no masking logic)",
+      "fa_top: softmax m_old/l_old = 0 (TODO: unconnected buffer_mgr)",
+      "fa_top: divider divisor = 1 (TODO: unconnected softmax l_new)"
+    ],
+    "unreachable_states": [
+      "fa_ctrl: ERROR_S (no error trigger mechanism)"
+    ],
+    "impractical_paths": [
+      "fa_ctrl: Full 256-row execution with all 16 tiles per row (covered via register force)"
+    ]
+  }
+}

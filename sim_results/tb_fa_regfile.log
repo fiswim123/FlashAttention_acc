@@ -1,0 +1,17 @@
+[PASS] Test 1: REV register = 0xfa000100
+[PASS] Test 2: Q_BASE_L write/read = 0xdeadbeef
+[PASS] Test 3: Q_BASE_H write/read = 0xcafebabe
+[PASS] Test 4: reg_q_base[31:0] = 0xdeadbeef
+[PASS] Test 5: reg_q_base[63:32] = 0xcafebabe
+[PASS] Test 6: K_BASE_L = 0x11111111
+[PASS] Test 7: K_BASE_H = 0x22222222
+[PASS] Test 8: V_BASE_L = 0x33333333
+[PASS] Test 9: V_BASE_H = 0x44444444
+[PASS] Test 10: O_BASE_L = 0x55555555
+[PASS] Test 11: O_BASE_H = 0x66666666
+[PASS] Test 12: STRIDE = 0x00000100
+[TIMEOUT]
+- ../tb/tb_fa_regfile.sv:189: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 50us; walltime 0.009 s; speed 5.868 ms/s
+- Verilator: cpu 0.009 s on 1 threads; alloced 14 MB

@@ -1,0 +1,22 @@
+[PASS] Test 1: Q elem 0 = 0x0008
+[PASS] Test 2: Q elem 1 = 0x0007
+[PASS] Test 3: Q elem 7 = 0x0001
+[PASS] Test 4: K buf_b elem 0 (empty) = 0x0000
+[PASS] Test 5: K buf_a elem 0 = 0x0080
+[PASS] Test 6: K buf_a elem 7 = 0x0010
+[PASS] Test 7: V buf_a elem 0 = 0x0800
+[PASS] Test 8: O DMA read elem 0 = 0x0010
+[PASS] Test 9: MAC priority Q elem 0 = 0x0008
+[PASS] Test 10: LUT addr 255 = 0x1500
+[PASS] Test 11: LUT addr 0 = 0x0000
+[PASS] Test 12: LUT addr 64 = 0x0040
+[PASS] Test 13: LUT addr 128 = 0x0140
+[PASS] Test 14: LUT addr 192 = 0x0540
+========================================
+  fa_buffer_mgr: 14 passed, 0 failed
+========================================
+25461580216795114449737438035
+- ../tb/tb_fa_buffer_mgr.sv:144: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 590ns; walltime 0.016 s; speed 37.017 us/s
+- Verilator: cpu 0.016 s on 1 threads; alloced 16 MB

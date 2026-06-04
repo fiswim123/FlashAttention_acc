@@ -1,0 +1,25 @@
+[PASS] Test 1: IDLE not busy
+[PASS] Test 2: IDLE not done
+[PASS] Test 3: IDLE not error
+[PASS] Test 4: LOAD_Q busy
+[FAIL] Test 5: ROW_INIT acc_clear (got 0, exp 1)
+[FAIL] Test 6: SOFTMAX sm_start (got 0, exp 1)
+[PASS] Test 7: MAC_SV mac_mode
+[FAIL] Test 8: NEXT_TILE tile_cnt=0 = 1, exp 0
+[PASS] Test 9: tile_cnt=15 = 15
+[FAIL] Test 10: DIV div_start (got 0, exp 1)
+[PASS] Test 11: STORE_O dma_cmd=O
+[FAIL] Test 12: NEXT_ROW row_cnt=0 = 1, exp 0
+[FAIL] Test 13: Soft reset -> IDLE (got 1, exp 0)
+[PASS] Test 14: cycle_cnt > 0 = 1
+[FAIL] Test 15: buf_sel tile 0 = 1, exp 0
+[FAIL] Test 16: buf_sel tile 1 = 0, exp 1
+[FAIL] Test 17: dma_cmd Q (got 1, exp 0)
+========================================
+  fa_ctrl: 8 passed, 9 failed
+========================================
+25461580216795114449569663308
+- ../tb/tb_fa_ctrl.sv:161: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 3us; walltime 0.001 s; speed 3.518 ms/s
+- Verilator: cpu 0.001 s on 1 threads; alloced 13 MB
