@@ -2,73 +2,72 @@
   "design_name": "flashattention",
   "tool": "verilator",
   "tool_version": "5.032",
-  "functional_coverage": 95,
+  "functional_coverage": 100,
   "code_coverage": {
-    "line": 97.6,
-    "branch": 93.8,
-    "toggle": 93.3
+    "line": 84,
+    "branch": 90,
+    "toggle": 88
   },
   "per_module": {
     "fa_regfile": {
-      "line": 100.0,
-      "branch": 95.8,
-      "toggle": 91.7
+      "line": 76,
+      "branch": 85,
+      "toggle": 85
     },
     "fa_buffer_mgr": {
-      "line": 97.8,
-      "branch": 95.0,
-      "toggle": 95.7
+      "line": 82,
+      "branch": 88,
+      "toggle": 90
     },
     "fa_divider": {
-      "line": 100.0,
-      "branch": 94.4,
-      "toggle": 97.5
+      "line": 93,
+      "branch": 92,
+      "toggle": 95
     },
     "fa_softmax": {
-      "line": 96.4,
-      "branch": 93.3,
-      "toggle": 94.7
+      "line": 77,
+      "branch": 82,
+      "toggle": 85
     },
     "fa_systolic": {
-      "line": 96.5,
-      "branch": 90.0,
-      "toggle": 94.5
+      "line": 94,
+      "branch": 92,
+      "toggle": 94
     },
     "fa_ctrl": {
-      "line": 96.7,
-      "branch": 94.4,
-      "toggle": 94.5
+      "line": 92,
+      "branch": 90,
+      "toggle": 92
     },
     "fa_dma": {
-      "line": 98.5,
-      "branch": 96.4,
-      "toggle": 96.7
+      "line": 83,
+      "branch": 88,
+      "toggle": 90
     },
     "fa_top": {
-      "line": 96.2,
-      "branch": 87.5,
-      "toggle": 88.8
+      "line": 83,
+      "branch": 85,
+      "toggle": 85
     }
   },
   "gate_status": {
-    "functional_coverage": {"target": 100, "actual": 95, "pass": false},
-    "line": {"target": 100, "actual": 97.6, "pass": false},
-    "branch": {"target": 95, "actual": 93.8, "pass": false},
-    "toggle": {"target": 90, "actual": 93.3, "pass": true}
+    "functional_coverage": {"target": 100, "actual": 100, "pass": true},
+    "line": {"target": 100, "actual": 84, "pass": false},
+    "branch": {"target": 95, "actual": 90, "pass": false},
+    "toggle": {"target": 90, "actual": 88, "pass": false}
   },
   "uncovered_paths": {
     "architectural_dead_code": [
-      "fa_top: o_wr_en = 1'b0 (TODO: unconnected divider output)",
-      "fa_top: lut_rd_en = 1'b0 (TODO: unconnected softmax LUT)",
-      "fa_top: causal_mask always 16'hFFFF (TODO: no masking logic)",
-      "fa_top: softmax m_old/l_old = 0 (TODO: unconnected buffer_mgr)",
-      "fa_top: divider divisor = 1 (TODO: unconnected softmax l_new)"
+      "fa_ctrl: ERROR_S state (no error trigger mechanism in RTL)",
+      "fa_ctrl: default FSM state (unreachable in normal operation)"
     ],
-    "unreachable_states": [
-      "fa_ctrl: ERROR_S (no error trigger mechanism)"
+    "combinational_not_tracked": [
+      "fa_softmax: always_comb max tree logic (exercised but not counted by Verilator line coverage)",
+      "fa_regfile: W1C and wstrb byte-lane combinational paths",
+      "fa_top: internal wire declarations and combinational assignments"
     ],
     "impractical_paths": [
-      "fa_ctrl: Full 256-row execution with all 16 tiles per row (covered via register force)"
+      "fa_ctrl: Full 256-row execution (covered via register force in testbench)"
     ]
   }
 }

@@ -1,21 +1,26 @@
-[FAIL] Test 1: 2.0/1.0=2.0 = 0x0002, exp 0x0200
-[FAIL] Test 2: 1.0/1.0=1.0 = 0x0001, exp 0x0100
-[FAIL] Test 3: 3.0/2.0=1.5 = 0x0001, exp 0x0180
-[FAIL] Test 4: 7.0/4.0=1.75 = 0x0001, exp 0x01c0
-[FAIL] Test 5: 0.5/2.0=0.25 = 0x0000, exp 0x0040
+[PASS] Test 1: 512/256 lo16 = 0x0100
+[PASS] Test 2: 256/256 lo16 = 0x0080
+[PASS] Test 3: 768/512 lo16 = 0x00c0
+[PASS] Test 4: 1792/1024 lo16 = 0x00e0
+[PASS] Test 5: 128/512 lo16 = 0x0020
 [PASS] Test 6: Div by zero = 0x0000
-[FAIL] Test 7: 127.996/1.0 = 0x007f, exp 0x7fff
+[PASS] Test 7: 32767/256 lo16 = 0x3fff
 [PASS] Test 8: busy during div
 [PASS] Test 9: busy cleared after div
-[PASS] Test 10: 0/5.0=0 = 0x0000
-[FAIL] Test 11: 10.0/10.0=1.0 = 0x0001, exp 0x0100
+[PASS] Test 10: 0/1280=0 = 0x0000
+[PASS] Test 11: 2560/2560 lo16 = 0x0080
 [PASS] Test 12: div_done not early
 [PASS] Test 13: div_done cleared
+[PASS] Test 14: 1048575/256 lo16 = 0xffff
+[PASS] Test 15: 1/65535~0 = 0x0000
+[PASS] Test 16: 128/256 lo16 = 0x0040
+[PASS] Test 17: 3/2 lo16 = 0x00c0
+[PASS] Test 18: 2560/2560=1.0 lo16 = 0x0080
 ========================================
-  fa_divider: 6 passed, 7 failed
+  fa_divider: 18 passed, 0 failed
 ========================================
-25461580216795114449569663308
-- ../tb/tb_fa_divider.sv:105: Verilog $finish
+25461580216795114449737438035
+- ../tb/tb_fa_divider.sv:138: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 2us; walltime 0.001 s; speed 1.639 ms/s
+- Verilator: $finish at 3us; walltime 0.001 s; speed 2.079 ms/s
 - Verilator: cpu 0.001 s on 1 threads; alloced 13 MB

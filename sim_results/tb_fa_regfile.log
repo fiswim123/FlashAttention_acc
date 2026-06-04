@@ -10,8 +10,36 @@
 [PASS] Test 10: O_BASE_L = 0x55555555
 [PASS] Test 11: O_BASE_H = 0x66666666
 [PASS] Test 12: STRIDE = 0x00000100
-[TIMEOUT]
-- ../tb/tb_fa_regfile.sv:189: Verilog $finish
+[PASS] Test 13: START self-cleared = 0x00000000
+[PASS] Test 14: SOFT_RESET self-cleared = 0x00000000
+[PASS] Test 15: CAUSAL_EN set = 0x00000001
+[PASS] Test 16: CAUSAL_EN sticky = 0x00000001
+[PASS] Test 17: CAUSAL_EN cleared = 0x00000000
+[PASS] Test 18: STATUS BUSY=1 = 0x00000001
+[PASS] Test 19: STATUS BUSY=0 = 0x00000000
+[PASS] Test 20: DONE set = 0x00000001
+[PASS] Test 21: DONE W1C = 0x00000000
+[PASS] Test 22: ERROR set = 0x00000001
+[PASS] Test 23: ERROR W1C = 0x00000000
+[PASS] Test 24: CYCLES = 0x12345678
+[PASS] Test 25: Write protect Q_BASE_L = 0xdeadbeef
+[PASS] Test 26: CFG register (reserved, no write path) = 0x00000000
+[PASS] Test 27: Write after BUSY clear = 0xcafebabe
+[PASS] Test 28: All 1s Q_BASE_L = 0xffffffff
+[PASS] Test 29: All 1s STRIDE = 0xffffffff
+[PASS] Test 30: Alt pattern L = 0xaaaaaaaa
+[PASS] Test 31: Alt pattern H = 0x55555555
+[PASS] Test 32: wstrb byte0 only = 0xffffff00
+[PASS] Test 33: wstrb byte3 only = 0xbbaaaaaa
+[PASS] Test 34: wstrb byte0+2 = 0x11cc11dd
+[PASS] Test 35: wstrb byte1+3 = 0xee22ff22
+[PASS] Test 36: wstrb=0 no write = 0xdeadbeef
+[PASS] Test 37: wstrb STRIDE low16 = 0x11220000
+========================================
+  fa_regfile: 37 passed, 0 failed
+========================================
+25461580216795114449737438035
+- ../tb/tb_fa_regfile.sv:244: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 50us; walltime 0.009 s; speed 5.868 ms/s
-- Verilator: cpu 0.009 s on 1 threads; alloced 14 MB
+- Verilator: $finish at 62us; walltime 0.011 s; speed 5.795 ms/s
+- Verilator: cpu 0.011 s on 1 threads; alloced 14 MB

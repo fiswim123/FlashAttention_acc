@@ -1,19 +1,29 @@
 [PASS] Test 1: Reset sync released
-[PASS] Test 2: Scan loopback A5 = 0x000000a5
-[PASS] Test 3: Scan loopback 5A = 0x0000005a
-[FAIL] Test 4: REV via top = 0x00000000, exp 0xfa000100
+[PASS] Test 2: Scan A5 = 0x000000a5
+[PASS] Test 3: Scan 5A = 0x0000005a
+[FAIL] Test 4: REV = 0x00000000, exp 0xfa000100
 [PASS] Test 5: Q_BASE_L = 0x00001000
 [PASS] Test 6: STRIDE = 0x00000100
-[PASS] Test 7: STATUS not busy = 0x00000000
-[PASS] Test 8: STATUS busy after start = 0x00000001
-[PASS] Test 9: CYCLES > 0 = 719
-[FAIL] Test 10: CAUSAL_EN = 0x00000000, exp 0x00000001
-[FAIL] Test 11: After soft reset not busy = 0x00000001, exp 0x00000000
+[PASS] Test 7: STATUS idle = 0x00000000
+[PASS] Test 8: CAUSAL_EN = 0x00000001
+[PASS] Test 9: CAUSAL_EN cleared = 0x00000000
+[PASS] Test 10: causal_mask all valid (disabled) = 0x0000ffff
+  [INFO] causal_mask with causal_en, row=0, tile=0: 0x0001
+[PASS] Test 11: busy after start = 0x00000001
+[PASS] Test 12: CYCLES=1620
+[FAIL] Test 13: After rst_n not busy = 0x00000001, exp 0x00000000
+[PASS] Test 14: Busy before sw reset = 0x00000001
+[FAIL] Test 15: After hard reset not busy = 0x00000001, exp 0x00000000
+[FAIL] Test 16: Write protect while busy = 0x00000000, exp 0x00001000
+[PASS] Test 17: causal mask row=0 tile=0 = 0x00000001
+[PASS] Test 18: full write via top = 0x12345678
+[PASS] Test 19: wstrb byte0 via top = 0x12345600
+[PASS] Test 20: wstrb byte2-3 via top = 0xaaaa5600
 ========================================
-  fa_top: 8 passed, 3 failed
+  fa_top: 16 passed, 4 failed
 ========================================
 25461580216795114449569663308
-- ../tb/tb_fa_top.sv:180: Verilog $finish
+- ../tb/tb_fa_top.sv:286: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 23us; walltime 0.062 s; speed 365.648 us/s
-- Verilator: cpu 0.062 s on 1 threads; alloced 23 MB
+- Verilator: $finish at 64us; walltime 0.087 s; speed 732.086 us/s
+- Verilator: cpu 0.087 s on 1 threads; alloced 24 MB

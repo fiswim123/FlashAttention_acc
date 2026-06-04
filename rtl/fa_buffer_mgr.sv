@@ -24,7 +24,7 @@ module fa_buffer_mgr (
     // MAC read interface (V)
     input  logic        mac_v_en,
     output logic [255:0] mac_v_data,
-    // Output write interface (O buffer)
+    // Output write interface (O buffer) - from divider quotient accumulation
     input  logic        o_wr_en,
     input  logic [255:0] o_wr_data,
     // Buffer select for dual buffering
@@ -32,7 +32,13 @@ module fa_buffer_mgr (
     // Exp LUT read interface
     input  logic        lut_rd_en,
     input  logic [7:0]  lut_rd_addr,
-    output logic [15:0] lut_rd_data
+    output logic [15:0] lut_rd_data,
+    // Online softmax running stats (per-row, latched registers)
+    output logic [39:0] m_old,
+    output logic [39:0] l_old,
+    input  logic [39:0] m_new,
+    input  logic [39:0] l_new,
+    input  logic [15:0] correction
 );
 
     // =========================================================================
@@ -193,5 +199,26 @@ module fa_buffer_mgr (
         if (lut_access)
             lut_rd_data <= exp_lut[lut_rd_addr];
     end
+
+    // =========================================================================
+    // Online Softmax Running Stats (per-row latched registers)
+    // =========================================================================
+    // m_old/l_old: read by softmax at start of each tile
+    // m_new/l_new/correction: written back by softmax after each tile
+    logic [39:0] m_old_reg, l_old_reg;
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            m_old_reg <= 40'sh80_0000_0000;  // -inf in Q8.32
+            l_old_reg <= 40'h0;
+        end else if (m_new != m_old_reg || l_new != l_old_reg) begin
+            // Update running stats when softmax produces new values
+            m_old_reg <= m_new;
+            l_old_reg <= l_new;
+        end
+    end
+
+    assign m_old = m_old_reg;
+    assign l_old = l_old_reg;
 
 endmodule

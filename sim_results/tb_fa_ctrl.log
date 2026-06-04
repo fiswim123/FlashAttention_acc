@@ -2,24 +2,75 @@
 [PASS] Test 2: IDLE not done
 [PASS] Test 3: IDLE not error
 [PASS] Test 4: LOAD_Q busy
-[FAIL] Test 5: ROW_INIT acc_clear (got 0, exp 1)
-[FAIL] Test 6: SOFTMAX sm_start (got 0, exp 1)
-[PASS] Test 7: MAC_SV mac_mode
-[FAIL] Test 8: NEXT_TILE tile_cnt=0 = 1, exp 0
+[PASS] Test 5: LOAD_Q dma_cmd=Q
+[PASS] Test 6: ROW_INIT busy
+[PASS] Test 7: SM_UPDATE wait succeeded
+[PASS] Test 8: MAC_SV mac_mode
 [PASS] Test 9: tile_cnt=15 = 15
-[FAIL] Test 10: DIV div_start (got 0, exp 1)
-[PASS] Test 11: STORE_O dma_cmd=O
-[FAIL] Test 12: NEXT_ROW row_cnt=0 = 1, exp 0
-[FAIL] Test 13: Soft reset -> IDLE (got 1, exp 0)
-[PASS] Test 14: cycle_cnt > 0 = 1
-[FAIL] Test 15: buf_sel tile 0 = 1, exp 0
-[FAIL] Test 16: buf_sel tile 1 = 0, exp 1
-[FAIL] Test 17: dma_cmd Q (got 1, exp 0)
+[PASS] Test 10: DIV_START_S busy
+[PASS] Test 11: DIV_START_S wait succeeded
+[PASS] Test 12: div_elem_idx at DIV_WAIT = 0
+[PASS] Test 13: DIV_NEXT not last
+[PASS] Test 14: div_elem_idx at DIV_WAIT = 1
+[PASS] Test 15: DIV_NEXT not last
+[PASS] Test 16: div_elem_idx at DIV_WAIT = 2
+[PASS] Test 17: DIV_NEXT not last
+[PASS] Test 18: div_elem_idx at DIV_WAIT = 3
+[PASS] Test 19: DIV_NEXT not last
+[PASS] Test 20: div_elem_idx at DIV_WAIT = 4
+[PASS] Test 21: DIV_NEXT not last
+[PASS] Test 22: div_elem_idx at DIV_WAIT = 5
+[PASS] Test 23: DIV_NEXT not last
+[PASS] Test 24: div_elem_idx at DIV_WAIT = 6
+[PASS] Test 25: DIV_NEXT not last
+[PASS] Test 26: div_elem_idx at DIV_WAIT = 7
+[PASS] Test 27: DIV_NEXT not last
+[PASS] Test 28: div_elem_idx at DIV_WAIT = 8
+[PASS] Test 29: DIV_NEXT not last
+[PASS] Test 30: div_elem_idx at DIV_WAIT = 9
+[PASS] Test 31: DIV_NEXT not last
+[PASS] Test 32: div_elem_idx at DIV_WAIT = 10
+[PASS] Test 33: DIV_NEXT not last
+[PASS] Test 34: div_elem_idx at DIV_WAIT = 11
+[PASS] Test 35: DIV_NEXT not last
+[PASS] Test 36: div_elem_idx at DIV_WAIT = 12
+[PASS] Test 37: DIV_NEXT not last
+[PASS] Test 38: div_elem_idx at DIV_WAIT = 13
+[PASS] Test 39: DIV_NEXT not last
+[PASS] Test 40: div_elem_idx at DIV_WAIT = 14
+[PASS] Test 41: DIV_NEXT not last
+[PASS] Test 42: div_elem_idx at DIV_WAIT = 15
+[PASS] Test 43: DIV_NEXT last elem
+[PASS] Test 44: O_WRITE busy
+[PASS] Test 45: O_WRITE dma_cmd=O
+[PASS] Test 46: STORE_O busy
+[PASS] Test 47: row_cnt after NEXT_ROW+1 = 1
+[PASS] Test 48: Reset -> IDLE
+[PASS] Test 49: cycle_cnt > 0 = 1
+  [INFO] buf_sel after tile 0: 1
+  [INFO] buf_sel after tile 1: 0
+[PASS] Test 50: tile_cnt after 2 tiles = 2
+[PASS] Test 51: row_cnt after row 0 complete = 1
+[PASS] Test 52: ROW_INIT wait succeeded
+[PASS] Test 53: Reset for T19
+[PASS] Test 54: sw_reset mid-compute -> IDLE
+[PASS] Test 55: FSM reached LOAD_Q
+[PASS] Test 56: FSM reached MAC_SV
+[PASS] Test 57: FSM reached NEXT_TILE
+[PASS] Test 58: FSM reached DIV_START_S
+[PASS] Test 59: FSM reached DIV_WAIT
+[PASS] Test 60: FSM reached DIV_DONE_S
+[PASS] Test 61: FSM reached DIV_NEXT
+[PASS] Test 62: FSM reached O_WRITE
+[PASS] Test 63: FSM reached STORE_O
+[PASS] Test 64: FSM reached NEXT_ROW
+[PASS] Test 65: FSM reached WRITEBACK
+[PASS] Test 66: FSM reached DONE_S
 ========================================
-  fa_ctrl: 8 passed, 9 failed
+  fa_ctrl: 66 passed, 0 failed
 ========================================
-25461580216795114449569663308
-- ../tb/tb_fa_ctrl.sv:161: Verilog $finish
+25461580216795114449737438035
+- ../tb/tb_fa_ctrl.sv:253: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 3us; walltime 0.001 s; speed 3.518 ms/s
-- Verilator: cpu 0.001 s on 1 threads; alloced 13 MB
+- Verilator: $finish at 174us; walltime 0.007 s; speed 25.224 ms/s
+- Verilator: cpu 0.007 s on 1 threads; alloced 13 MB

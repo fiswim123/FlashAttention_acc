@@ -8,31 +8,31 @@
         // =============================================================================
         module fa_top (
             // Clock and Reset
- 009235     input  logic        clk,
-%000007     input  logic        rst_n,
+ 012799     input  logic        clk,
+ 000013     input  logic        rst_n,
             // DFT signals
 %000000     input  logic [1:0]  test_mode,
 %000000     input  logic        test_se,
 %000002     input  logic [7:0]  test_si,
 %000002     output logic [7:0]  test_so,
             // AXI4-Lite Slave (Register File)
-~000013     input  logic [5:0]  s_axil_awaddr,
-%000001     input  logic        s_axil_awvalid,
- 000042     output logic        s_axil_awready,
-%000007     input  logic [31:0] s_axil_wdata,
-%000001     input  logic [3:0]  s_axil_wstrb,
- 000033     input  logic        s_axil_wvalid,
- 000042     output logic        s_axil_wready,
+~000025     input  logic [5:0]  s_axil_awaddr,
+%000007     input  logic        s_axil_awvalid,
+ 000078     output logic        s_axil_awready,
+~000012     input  logic [31:0] s_axil_wdata,
+%000003     input  logic [3:0]  s_axil_wstrb,
+ 000063     input  logic        s_axil_wvalid,
+ 000078     output logic        s_axil_wready,
 %000000     output logic [1:0]  s_axil_bresp,
- 000041     output logic        s_axil_bvalid,
- 000034     input  logic        s_axil_bready,
+ 000077     output logic        s_axil_bvalid,
+ 000064     input  logic        s_axil_bready,
 ~000017     input  logic [5:0]  s_axil_araddr,
-%000003     input  logic        s_axil_arvalid,
- 000054     output logic        s_axil_arready,
+%000005     input  logic        s_axil_arvalid,
+ 000064     output logic        s_axil_arready,
 ~000062     output logic [31:0] s_axil_rdata,
 %000000     output logic [1:0]  s_axil_rresp,
- 000053     output logic        s_axil_rvalid,
- 000048     input  logic        s_axil_rready,
+ 000063     output logic        s_axil_rvalid,
+ 000054     input  logic        s_axil_rready,
             // AXI4 Master (DMA)
 %000002     output logic [63:0] m_axi_awaddr,
 %000006     output logic [7:0]  m_axi_awlen,
@@ -64,20 +64,20 @@
             // =========================================================================
             // Reset Synchronizer (async assert, sync deassert)
             // =========================================================================
-%000007     logic rst_n_meta, rst_n_sync;
+ 000013     logic rst_n_meta, rst_n_sync;
         
- 004618     always_ff @(posedge clk or negedge rst_n) begin
- 004607         if (!rst_n) begin
- 000011             rst_n_meta <= 1'b0;
- 000011             rst_n_sync <= 1'b0;
- 004607         end else begin
- 004607             rst_n_meta <= 1'b1;
- 004607             rst_n_sync <= rst_n_meta;
+ 006401     always_ff @(posedge clk or negedge rst_n) begin
+ 006378         if (!rst_n) begin
+ 000023             rst_n_meta <= 1'b0;
+ 000023             rst_n_sync <= 1'b0;
+ 006378         end else begin
+ 006378             rst_n_meta <= 1'b1;
+ 006378             rst_n_sync <= rst_n_meta;
                 end
             end
         
             // Use synchronized reset for all internal logic
-%000007     wire rst_n_int = rst_n_sync;
+ 000013     wire rst_n_int = rst_n_sync;
         
             // =========================================================================
             // Internal wires
@@ -86,9 +86,9 @@
             // Regfile <-> Ctrl
 %000006     logic        reg_start;
 %000000     logic        reg_soft_reset;
-%000002     logic        reg_causal_en;
-%000003     logic [63:0] reg_q_base, reg_k_base, reg_v_base, reg_o_base;
-%000002     logic [31:0] reg_stride;
+%000008     logic        reg_causal_en;
+%000009     logic [63:0] reg_q_base, reg_k_base, reg_v_base, reg_o_base;
+%000005     logic [31:0] reg_stride;
         
             // Ctrl -> DMA
  000012     logic        ctrl_dma_start;
@@ -118,13 +118,14 @@
         
             // Ctrl -> Buffer
 %000006     logic        ctrl_buf_sel;
-%000006     logic        ctrl_acc_clear;
+%000006     logic        acc_clear;
         
             // Ctrl status
 %000006     logic        ctrl_busy, ctrl_done, ctrl_error;
 %000000     logic [7:0]  ctrl_row_cnt;
 %000006     logic [3:0]  ctrl_tile_cnt;
-~002312     logic [31:0] ctrl_cycle_cnt;
+~002472     logic [31:0] ctrl_cycle_cnt;
+%000000     logic [3:0]  ctrl_div_elem_idx;
         
             // DMA <-> Buffer
  000012     logic        dma_buf_wr_en;
@@ -140,8 +141,69 @@
             // MAC output
             logic [639:0] mac_acc_out;
         
-            // Softmax <-> MAC
+            // Softmax outputs
 %000006     logic [255:0] sm_exp_out;
+%000007     logic [39:0]  sm_m_new, sm_l_new;
+%000006     logic [15:0]  sm_correction;
+        
+            // Buffer mgr running stats
+%000007     logic [39:0]  buf_m_old, buf_l_old;
+        
+            // Divider
+%000000     logic [15:0]  div_quotient;
+%000000     logic         div_busy;
+        
+            // Divider quotient accumulator for O buffer write
+%000000     logic [255:0] o_buf_write_data;
+%000000     logic         o_buf_write_en;
+        
+            // Causal mask
+%000009     logic [15:0]  causal_mask;
+        
+            // =========================================================================
+            // Causal Mask Generation
+            // =========================================================================
+            // Causal attention: element (row, col) is valid only if col <= row.
+            // Tile column range: [tile_cnt*16, tile_cnt*16+15].
+            // - If tile_col_start > row: all columns masked (upper triangle tile)
+            // - If tile_col_start + 15 <= row: all columns valid (lower triangle tile)
+            // - Otherwise: columns 0..(row - tile_col_start) are valid (diagonal tile)
+%000006     wire [7:0] tile_col_start = {ctrl_tile_cnt, 4'b0};
+%000006     wire       tile_above     = (tile_col_start > ctrl_row_cnt);
+%000000     wire       tile_below     = (tile_col_start + 8'd15 <= ctrl_row_cnt);
+%000000     wire [3:0] diag_limit     = ctrl_row_cnt[3:0] - tile_col_start[3:0];
+        
+ 006407     always_comb begin
+ 102512         for (int j = 0; j < 16; j++) begin
+ 083888             if (!reg_causal_en)
+ 083888                 causal_mask[j] = 1'b1;
+%000000             else if (tile_above)
+%000000                 causal_mask[j] = 1'b0;
+~018624             else if (tile_below)
+%000000                 causal_mask[j] = 1'b1;
+                    else
+ 018624                 causal_mask[j] = (j[3:0] <= diag_limit) ? 1'b1 : 1'b0;
+                end
+            end
+        
+            // =========================================================================
+            // Divider Quotient Accumulator (16 x 16-bit -> 256-bit for O buffer)
+            // =========================================================================
+ 006401     always_ff @(posedge clk or negedge rst_n) begin
+ 006378         if (!rst_n) begin
+ 000023             o_buf_write_data <= 256'h0;
+ 000023             o_buf_write_en   <= 1'b0;
+ 006378         end else begin
+ 006378             o_buf_write_en <= 1'b0;
+                    // Capture each divider quotient element
+~006378             if (div_done) begin
+%000000                 o_buf_write_data[ctrl_div_elem_idx*16 +: 16] <= div_quotient;
+                        // After capturing the 16th element, signal write
+%000000                 if (ctrl_div_elem_idx == 4'd15)
+%000000                     o_buf_write_en <= 1'b1;
+                    end
+                end
+            end
         
             // =========================================================================
             // Module Instantiations
@@ -203,10 +265,11 @@
                 .div_start    (ctrl_div_start),
                 .div_done     (div_done),
                 .buf_sel      (ctrl_buf_sel),
-                .acc_clear    (ctrl_acc_clear),
+                .acc_clear    (acc_clear),
                 .row_cnt      (ctrl_row_cnt),
                 .tile_cnt     (ctrl_tile_cnt),
-                .cycle_cnt    (ctrl_cycle_cnt)
+                .cycle_cnt    (ctrl_cycle_cnt),
+                .div_elem_idx (ctrl_div_elem_idx)
             );
         
             // ---- M03: fa_dma ----
@@ -267,7 +330,7 @@
                 .kv_data    (ctrl_mac_mode ? buf_v_data : buf_k_data),
                 .score_in   (sm_exp_out),
                 .acc_out    (mac_acc_out),
-                .acc_clear  (ctrl_acc_clear)
+                .acc_clear  (acc_clear)
             );
         
             // ---- M05: fa_softmax ----
@@ -276,14 +339,14 @@
                 .rst_n        (rst_n_int),
                 .sm_start     (ctrl_sm_start),
                 .sm_done      (sm_done),
-                .score        (mac_acc_out[255:0]),  // Lower 16 elements from MAC
-                .m_old        (40'h0),               // TODO: connect from buffer_mgr
-                .l_old        (40'h0),               // TODO: connect from buffer_mgr
-                .m_new        (),                    // TODO: connect to buffer_mgr
-                .l_new        (),                    // TODO: connect to divider
-                .correction   (),                    // TODO: connect to buffer_mgr
+                .score        (mac_acc_out[255:0]),
+                .m_old        (buf_m_old),
+                .l_old        (buf_l_old),
+                .m_new        (sm_m_new),
+                .l_new        (sm_l_new),
+                .correction   (sm_correction),
                 .exp_out      (sm_exp_out),
-                .causal_mask  (reg_causal_en ? 16'hFFFF : 16'hFFFF)  // TODO: proper causal mask
+                .causal_mask  (causal_mask)
             );
         
             // ---- M06: fa_divider ----
@@ -292,10 +355,10 @@
                 .rst_n      (rst_n_int),
                 .div_start  (ctrl_div_start),
                 .div_done   (div_done),
-                .dividend   (mac_acc_out[39:0]),     // TODO: proper accumulator selection
-                .divisor    (40'h1),                 // TODO: connect to l_new from softmax
-                .quotient   (),                      // TODO: connect to O buffer write path
-                .busy       ()                       // unused
+                .dividend   (mac_acc_out[ctrl_div_elem_idx*40 +: 40]),
+                .divisor    (sm_l_new),
+                .quotient   (div_quotient),
+                .busy       (div_busy)
             );
         
             // ---- M07: fa_buffer_mgr ----
@@ -314,12 +377,17 @@
                 .mac_k_data   (buf_k_data),
                 .mac_v_en     (ctrl_mac_start && ctrl_mac_mode),
                 .mac_v_data   (buf_v_data),
-                .o_wr_en      (1'b0),               // TODO: connect from divider output path
-                .o_wr_data    (256'h0),
+                .o_wr_en      (o_buf_write_en),
+                .o_wr_data    (o_buf_write_data),
                 .buf_sel      (ctrl_buf_sel),
-                .lut_rd_en    (1'b0),               // TODO: connect from softmax
+                .lut_rd_en    (1'b0),
                 .lut_rd_addr  (8'h0),
-                .lut_rd_data  ()
+                .lut_rd_data  (),
+                .m_old        (buf_m_old),
+                .l_old        (buf_l_old),
+                .m_new        (sm_m_new),
+                .l_new        (sm_l_new),
+                .correction   (sm_correction)
             );
         
             // =========================================================================

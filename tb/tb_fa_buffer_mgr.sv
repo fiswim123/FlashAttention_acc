@@ -14,6 +14,9 @@ module tb_fa_buffer_mgr;
     logic o_wr_en; logic [255:0] o_wr_data;
     logic buf_sel;
     logic lut_rd_en; logic [7:0] lut_rd_addr; logic [15:0] lut_rd_data;
+    logic [39:0] m_old, l_old;
+    logic [39:0] m_new, l_new;
+    logic [15:0] correction;
 
     integer tp=0, tf=0, tid=0;
 
@@ -48,6 +51,7 @@ module tb_fa_buffer_mgr;
         dma_wr_en=0; dma_wr_addr=0; dma_wr_data=0; dma_rd_en=0; dma_rd_addr=0;
         mac_q_en=0; mac_k_en=0; mac_v_en=0; o_wr_en=0; o_wr_data=0;
         buf_sel=0; lut_rd_en=0; lut_rd_addr=0;
+        m_new=0; l_new=0; correction=0;
         rst_n=0; repeat(4) @(posedge clk); rst_n=1; repeat(2) @(posedge clk);
 
         // T1: DMA write to Q buffer (addr[11:10]=00)

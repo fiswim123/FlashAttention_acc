@@ -6,34 +6,40 @@
         // MAS: M07 | Type: storage | Deps: none (leaf)
         // =============================================================================
         module fa_buffer_mgr (
- 009235     input  logic        clk,
-%000007     input  logic        rst_n,
+ 012799     input  logic        clk,
+~000013     input  logic        rst_n,
             // DMA write interface
- 000012     input  logic        dma_wr_en,
+ 000014     input  logic        dma_wr_en,
 ~000072     input  logic [11:0] dma_wr_addr,
 ~000072     input  logic [127:0] dma_wr_data,
             // DMA read interface
-%000000     input  logic        dma_rd_en,
-%000000     input  logic [11:0] dma_rd_addr,
-%000000     output logic [127:0] dma_rd_data,
+%000002     input  logic        dma_rd_en,
+%000001     input  logic [11:0] dma_rd_addr,
+%000001     output logic [127:0] dma_rd_data,
             // MAC read interface (Q)
- 000012     input  logic        mac_q_en,
+~000012     input  logic        mac_q_en,
 %000002     output logic [255:0] mac_q_data,
             // MAC read interface (K)
- 000012     input  logic        mac_k_en,
-%000000     output logic [255:0] mac_k_data,
+~000012     input  logic        mac_k_en,
+%000002     output logic [255:0] mac_k_data,
             // MAC read interface (V)
-%000000     input  logic        mac_v_en,
-%000000     output logic [255:0] mac_v_data,
-            // Output write interface (O buffer)
-%000000     input  logic        o_wr_en,
-%000000     input  logic [255:0] o_wr_data,
+%000004     input  logic        mac_v_en,
+%000002     output logic [255:0] mac_v_data,
+            // Output write interface (O buffer) - from divider quotient accumulation
+%000002     input  logic        o_wr_en,
+%000001     input  logic [255:0] o_wr_data,
             // Buffer select for dual buffering
 %000006     input  logic        buf_sel,
             // Exp LUT read interface
-%000000     input  logic        lut_rd_en,
-%000000     input  logic [7:0]  lut_rd_addr,
-%000000     output logic [15:0] lut_rd_data
+~000010     input  logic        lut_rd_en,
+%000005     input  logic [7:0]  lut_rd_addr,
+%000003     output logic [15:0] lut_rd_data,
+            // Online softmax running stats (per-row, latched registers)
+%000007     output logic [39:0] m_old,
+%000006     output logic [39:0] l_old,
+%000007     input  logic [39:0] m_new,
+%000006     input  logic [39:0] l_new,
+%000006     input  logic [15:0] correction
         );
         
             // =========================================================================
@@ -78,9 +84,9 @@
             // =========================================================================
             // Arbitration: MAC > DMA > LUT
             // =========================================================================
- 000012     logic mac_access;
- 000012     logic dma_access;
-%000000     logic lut_access;
+ 000014     logic mac_access;
+ 000014     logic dma_access;
+~000010     logic lut_access;
         
             assign mac_access = mac_q_en | mac_k_en | mac_v_en;
             assign dma_access = (dma_wr_en | dma_rd_en) & ~mac_access;
@@ -91,56 +97,56 @@
             // =========================================================================
             // DMA writes 128-bit (8 x 16-bit elements) per beat
             // Address decoding: bits [11:10] select buffer, bits [9:3] select entry group
-%000000     wire [1:0] dma_buf_sel = dma_wr_addr[11:10];
+%000005     wire [1:0] dma_buf_sel = dma_wr_addr[11:10];
 ~000036     wire [8:0] dma_entry   = dma_wr_addr[9:1];  // 16-bit word address
         
- 004618     always_ff @(posedge clk) begin
- 004546         if (dma_wr_en && dma_access) begin
- 000072             case (dma_buf_sel)
- 000072                 2'b00: begin  // Q buffer (64 entries)
- 000576                     for (int i = 0; i < 8; i++) begin
+ 006400     always_ff @(posedge clk) begin
+~006328         if (dma_wr_en && dma_access) begin
+~000072             case (dma_buf_sel)
+~000072                 2'b00: begin  // Q buffer (64 entries)
+~000576                     for (int i = 0; i < 8; i++) begin
 ~000576                         if (dma_entry + i < 64)
- 000576                             q_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
+~000576                             q_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
                             end
                         end
-%000000                 2'b01: begin  // K buffer (dual)
-%000000                     for (int i = 0; i < 8; i++) begin
-%000000                         if (buf_sel == 1'b0)
-%000000                             k_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
+%000002                 2'b01: begin  // K buffer (dual)
+~000016                     for (int i = 0; i < 8; i++) begin
+%000008                         if (buf_sel == 1'b0)
+%000008                             k_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
                                 else
-%000000                             k_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
+%000008                             k_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
                             end
                         end
-%000000                 2'b10: begin  // V buffer (dual)
-%000000                     for (int i = 0; i < 8; i++) begin
-%000000                         if (buf_sel == 1'b0)
-%000000                             v_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
+%000002                 2'b10: begin  // V buffer (dual)
+~000016                     for (int i = 0; i < 8; i++) begin
+%000008                         if (buf_sel == 1'b0)
+%000008                             v_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
                                 else
-%000000                             v_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
+%000008                             v_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
                             end
                         end
-%000000                 2'b11: begin  // O buffer
-%000000                     for (int i = 0; i < 8; i++) begin
-%000000                         if (dma_entry + i[2:0] < 64)
-%000000                             o_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
+%000001                 2'b11: begin  // O buffer
+%000008                     for (int i = 0; i < 8; i++) begin
+%000008                         if (dma_entry + i[2:0] < 64)
+%000008                             o_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
                             end
                         end
                     endcase
                 end
                 // O buffer write from MAC (256-bit = 16 x 16-bit)
-~004618         if (o_wr_en) begin
-%000000             for (int i = 0; i < 16; i++)
-%000000                 o_buf[i[5:0]] <= o_wr_data[i*16 +: 16];
+~006400         if (o_wr_en) begin
+~000016             for (int i = 0; i < 16; i++)
+~000016                 o_buf[i[5:0]] <= o_wr_data[i*16 +: 16];
                 end
             end
         
             // =========================================================================
             // DMA Read Path (from O buffer)
             // =========================================================================
- 004618     always_ff @(posedge clk) begin
-~004618         if (dma_rd_en && dma_access) begin
-%000000             for (int i = 0; i < 8; i++)
-%000000                 dma_rd_data[i*16 +: 16] <= o_buf[dma_rd_addr[5:0] + i[2:0]];
+ 006400     always_ff @(posedge clk) begin
+~006400         if (dma_rd_en && dma_access) begin
+%000008             for (int i = 0; i < 8; i++)
+%000008                 dma_rd_data[i*16 +: 16] <= o_buf[dma_rd_addr[5:0] + i[2:0]];
                 end
             end
         
@@ -150,35 +156,35 @@
             // Q read: single buffer, 16 elements starting from mac_q_addr
             // K/V read: dual-buffered, selected by buf_sel (inverted for read vs write)
 %000002     logic [255:0] mac_q_data_reg;
-%000000     logic [255:0] mac_k_data_reg;
-%000000     logic [255:0] mac_v_data_reg;
+%000002     logic [255:0] mac_k_data_reg;
+%000002     logic [255:0] mac_v_data_reg;
         
- 004618     always_ff @(posedge clk) begin
-~004612         if (mac_q_en) begin
+ 006400     always_ff @(posedge clk) begin
+~006394         if (mac_q_en) begin
 ~000096             for (int i = 0; i < 16; i++)
  000096                 mac_q_data_reg[i*16 +: 16] <= q_buf[i[5:0]];
                 end
             end
         
- 004618     always_ff @(posedge clk) begin
-~004612         if (mac_k_en) begin
+ 006400     always_ff @(posedge clk) begin
+~006394         if (mac_k_en) begin
 ~000096             for (int i = 0; i < 16; i++) begin
                         // Read from the buffer NOT being written to (opposite of buf_sel)
 ~000096                 if (buf_sel == 1'b0)
  000096                     mac_k_data_reg[i*16 +: 16] <= k_buf_b[i[9:0]];
                         else
-%000000                     mac_k_data_reg[i*16 +: 16] <= k_buf_a[i[9:0]];
+~000016                     mac_k_data_reg[i*16 +: 16] <= k_buf_a[i[9:0]];
                     end
                 end
             end
         
- 004618     always_ff @(posedge clk) begin
-~004618         if (mac_v_en) begin
-%000000             for (int i = 0; i < 16; i++) begin
-%000000                 if (buf_sel == 1'b0)
-%000000                     mac_v_data_reg[i*16 +: 16] <= v_buf_b[i[9:0]];
+ 006400     always_ff @(posedge clk) begin
+~006400         if (mac_v_en) begin
+~000032             for (int i = 0; i < 16; i++) begin
+~000016                 if (buf_sel == 1'b0)
+~000016                     mac_v_data_reg[i*16 +: 16] <= v_buf_b[i[9:0]];
                         else
-%000000                     mac_v_data_reg[i*16 +: 16] <= v_buf_a[i[9:0]];
+~000016                     mac_v_data_reg[i*16 +: 16] <= v_buf_a[i[9:0]];
                     end
                 end
             end
@@ -190,10 +196,31 @@
             // =========================================================================
             // Exp LUT Read Path
             // =========================================================================
- 004618     always_ff @(posedge clk) begin
-~004618         if (lut_access)
-%000000             lut_rd_data <= exp_lut[lut_rd_addr];
+ 006400     always_ff @(posedge clk) begin
+~006400         if (lut_access)
+%000005             lut_rd_data <= exp_lut[lut_rd_addr];
             end
+        
+            // =========================================================================
+            // Online Softmax Running Stats (per-row latched registers)
+            // =========================================================================
+            // m_old/l_old: read by softmax at start of each tile
+            // m_new/l_new/correction: written back by softmax after each tile
+%000007     logic [39:0] m_old_reg, l_old_reg;
+        
+ 006406     always_ff @(posedge clk or negedge rst_n) begin
+~000037         if (!rst_n) begin
+~000037             m_old_reg <= 40'sh80_0000_0000;  // -inf in Q8.32
+~000037             l_old_reg <= 40'h0;
+~006363         end else if (m_new != m_old_reg || l_new != l_old_reg) begin
+                    // Update running stats when softmax produces new values
+%000006             m_old_reg <= m_new;
+%000006             l_old_reg <= l_new;
+                end
+            end
+        
+            assign m_old = m_old_reg;
+            assign l_old = l_old_reg;
         
         endmodule
         

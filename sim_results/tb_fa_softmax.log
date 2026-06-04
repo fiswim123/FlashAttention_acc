@@ -4,16 +4,16 @@
 [PASS] Test 4: causal mask = 1024
 [PASS] Test 5: all masked = 0
 [PASS] Test 6: online tile 2 = 1792
-[FAIL] Test 7: all negative = 0, exp -256
+[PASS] Test 7: all negative (m_old wins) = 0
 [PASS] Test 8: sm_done not early
 [PASS] Test 9: sm_done cleared
 [PASS] Test 10: exp_out non-zero
 [PASS] Test 11: all zero scores = 0
 ========================================
-  fa_softmax: 10 passed, 1 failed
+  fa_softmax: 11 passed, 0 failed
 ========================================
-25461580216795114449569663308
-- ../tb/tb_fa_softmax.sv:97: Verilog $finish
+25461580216795114449737438035
+- ../tb/tb_fa_softmax.sv:100: Verilog $finish
 - S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
-- Verilator: $finish at 760ns; walltime 0.015 s; speed 50.056 us/s
-- Verilator: cpu 0.015 s on 1 threads; alloced 16 MB
+- Verilator: $finish at 760ns; walltime 0.017 s; speed 44.865 us/s
+- Verilator: cpu 0.017 s on 1 threads; alloced 16 MB

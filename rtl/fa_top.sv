@@ -117,13 +117,14 @@ module fa_top (
 
     // Ctrl -> Buffer
     logic        ctrl_buf_sel;
-    logic        ctrl_acc_clear;
+    logic        acc_clear;
 
     // Ctrl status
     logic        ctrl_busy, ctrl_done, ctrl_error;
     logic [7:0]  ctrl_row_cnt;
     logic [3:0]  ctrl_tile_cnt;
     logic [31:0] ctrl_cycle_cnt;
+    logic [3:0]  ctrl_div_elem_idx;
 
     // DMA <-> Buffer
     logic        dma_buf_wr_en;
@@ -139,8 +140,69 @@ module fa_top (
     // MAC output
     logic [639:0] mac_acc_out;
 
-    // Softmax <-> MAC
+    // Softmax outputs
     logic [255:0] sm_exp_out;
+    logic [39:0]  sm_m_new, sm_l_new;
+    logic [15:0]  sm_correction;
+
+    // Buffer mgr running stats
+    logic [39:0]  buf_m_old, buf_l_old;
+
+    // Divider
+    logic [15:0]  div_quotient;
+    logic         div_busy;
+
+    // Divider quotient accumulator for O buffer write
+    logic [255:0] o_buf_write_data;
+    logic         o_buf_write_en;
+
+    // Causal mask
+    logic [15:0]  causal_mask;
+
+    // =========================================================================
+    // Causal Mask Generation
+    // =========================================================================
+    // Causal attention: element (row, col) is valid only if col <= row.
+    // Tile column range: [tile_cnt*16, tile_cnt*16+15].
+    // - If tile_col_start > row: all columns masked (upper triangle tile)
+    // - If tile_col_start + 15 <= row: all columns valid (lower triangle tile)
+    // - Otherwise: columns 0..(row - tile_col_start) are valid (diagonal tile)
+    wire [7:0] tile_col_start = {ctrl_tile_cnt, 4'b0};
+    wire       tile_above     = (tile_col_start > ctrl_row_cnt);
+    wire       tile_below     = (tile_col_start + 8'd15 <= ctrl_row_cnt);
+    wire [3:0] diag_limit     = ctrl_row_cnt[3:0] - tile_col_start[3:0];
+
+    always_comb begin
+        for (int j = 0; j < 16; j++) begin
+            if (!reg_causal_en)
+                causal_mask[j] = 1'b1;
+            else if (tile_above)
+                causal_mask[j] = 1'b0;
+            else if (tile_below)
+                causal_mask[j] = 1'b1;
+            else
+                causal_mask[j] = (j[3:0] <= diag_limit) ? 1'b1 : 1'b0;
+        end
+    end
+
+    // =========================================================================
+    // Divider Quotient Accumulator (16 x 16-bit -> 256-bit for O buffer)
+    // =========================================================================
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            o_buf_write_data <= 256'h0;
+            o_buf_write_en   <= 1'b0;
+        end else begin
+            o_buf_write_en <= 1'b0;
+            // Capture each divider quotient element
+            if (div_done) begin
+                o_buf_write_data[ctrl_div_elem_idx*16 +: 16] <= div_quotient;
+                // After capturing the 16th element, signal write
+                if (ctrl_div_elem_idx == 4'd15)
+                    o_buf_write_en <= 1'b1;
+            end
+        end
+    end
 
     // =========================================================================
     // Module Instantiations
@@ -202,10 +264,11 @@ module fa_top (
         .div_start    (ctrl_div_start),
         .div_done     (div_done),
         .buf_sel      (ctrl_buf_sel),
-        .acc_clear    (ctrl_acc_clear),
+        .acc_clear    (acc_clear),
         .row_cnt      (ctrl_row_cnt),
         .tile_cnt     (ctrl_tile_cnt),
-        .cycle_cnt    (ctrl_cycle_cnt)
+        .cycle_cnt    (ctrl_cycle_cnt),
+        .div_elem_idx (ctrl_div_elem_idx)
     );
 
     // ---- M03: fa_dma ----
@@ -266,7 +329,7 @@ module fa_top (
         .kv_data    (ctrl_mac_mode ? buf_v_data : buf_k_data),
         .score_in   (sm_exp_out),
         .acc_out    (mac_acc_out),
-        .acc_clear  (ctrl_acc_clear)
+        .acc_clear  (acc_clear)
     );
 
     // ---- M05: fa_softmax ----
@@ -275,14 +338,14 @@ module fa_top (
         .rst_n        (rst_n_int),
         .sm_start     (ctrl_sm_start),
         .sm_done      (sm_done),
-        .score        (mac_acc_out[255:0]),  // Lower 16 elements from MAC
-        .m_old        (40'h0),               // TODO: connect from buffer_mgr
-        .l_old        (40'h0),               // TODO: connect from buffer_mgr
-        .m_new        (),                    // TODO: connect to buffer_mgr
-        .l_new        (),                    // TODO: connect to divider
-        .correction   (),                    // TODO: connect to buffer_mgr
+        .score        (mac_acc_out[255:0]),
+        .m_old        (buf_m_old),
+        .l_old        (buf_l_old),
+        .m_new        (sm_m_new),
+        .l_new        (sm_l_new),
+        .correction   (sm_correction),
         .exp_out      (sm_exp_out),
-        .causal_mask  (reg_causal_en ? 16'hFFFF : 16'hFFFF)  // TODO: proper causal mask
+        .causal_mask  (causal_mask)
     );
 
     // ---- M06: fa_divider ----
@@ -291,10 +354,10 @@ module fa_top (
         .rst_n      (rst_n_int),
         .div_start  (ctrl_div_start),
         .div_done   (div_done),
-        .dividend   (mac_acc_out[39:0]),     // TODO: proper accumulator selection
-        .divisor    (40'h1),                 // TODO: connect to l_new from softmax
-        .quotient   (),                      // TODO: connect to O buffer write path
-        .busy       ()                       // unused
+        .dividend   (mac_acc_out[ctrl_div_elem_idx*40 +: 40]),
+        .divisor    (sm_l_new),
+        .quotient   (div_quotient),
+        .busy       (div_busy)
     );
 
     // ---- M07: fa_buffer_mgr ----
@@ -313,12 +376,17 @@ module fa_top (
         .mac_k_data   (buf_k_data),
         .mac_v_en     (ctrl_mac_start && ctrl_mac_mode),
         .mac_v_data   (buf_v_data),
-        .o_wr_en      (1'b0),               // TODO: connect from divider output path
-        .o_wr_data    (256'h0),
+        .o_wr_en      (o_buf_write_en),
+        .o_wr_data    (o_buf_write_data),
         .buf_sel      (ctrl_buf_sel),
-        .lut_rd_en    (1'b0),               // TODO: connect from softmax
+        .lut_rd_en    (1'b0),
         .lut_rd_addr  (8'h0),
-        .lut_rd_data  ()
+        .lut_rd_data  (),
+        .m_old        (buf_m_old),
+        .l_old        (buf_l_old),
+        .m_new        (sm_m_new),
+        .l_new        (sm_l_new),
+        .correction   (sm_correction)
     );
 
     // =========================================================================

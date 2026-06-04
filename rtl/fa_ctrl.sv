@@ -34,7 +34,8 @@ module fa_ctrl (
     // Status outputs
     output logic [7:0]  row_cnt,
     output logic [3:0]  tile_cnt,
-    output logic [31:0] cycle_cnt
+    output logic [31:0] cycle_cnt,
+    output logic [3:0]  div_elem_idx
 );
 
     // =========================================================================
@@ -54,6 +55,8 @@ module fa_ctrl (
         DIV_START_S     = 5'h0A,
         DIV_WAIT        = 5'h0B,
         DIV_DONE_S      = 5'h0C,
+        DIV_NEXT        = 5'h12,
+        O_WRITE         = 5'h13,
         STORE_O         = 5'h0D,
         NEXT_ROW        = 5'h0E,
         WRITEBACK       = 5'h0F,
@@ -70,6 +73,7 @@ module fa_ctrl (
     logic [3:0]  tile_cnt_reg;
     logic [31:0] cycle_cnt_reg;
     logic        buf_sel_reg;
+    logic [3:0]  div_elem_cnt;  // Tracks which of 16 elements is being divided
 
     // =========================================================================
     // FSM: State register (async reset, sync release)
@@ -136,7 +140,17 @@ module fa_ctrl (
                     next = DIV_DONE_S;
             end
             DIV_DONE_S: begin
-                next = STORE_O;
+                next = DIV_NEXT;
+            end
+            DIV_NEXT: begin
+                if (div_elem_cnt == 4'd15)
+                    next = O_WRITE;
+                else
+                    next = DIV_START_S;
+            end
+            O_WRITE: begin
+                if (dma_done)
+                    next = STORE_O;
             end
             STORE_O: begin
                 if (dma_done)
@@ -195,6 +209,16 @@ module fa_ctrl (
             cycle_cnt_reg <= cycle_cnt_reg + 1'b1;
     end
 
+    // Divider element counter (0..15, increments after each divider invocation)
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            div_elem_cnt <= 4'd0;
+        else if (soft_reset || state == IDLE)
+            div_elem_cnt <= 4'd0;
+        else if (state == DIV_NEXT)
+            div_elem_cnt <= div_elem_cnt + 1'b1;
+    end
+
     // Buffer select (flip on each tile switch)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n)
@@ -217,17 +241,17 @@ module fa_ctrl (
     assign tile_cnt = tile_cnt_reg;
     assign cycle_cnt = cycle_cnt_reg;
     assign buf_sel  = buf_sel_reg;
+    assign div_elem_idx = div_elem_cnt;
 
     // DMA control
     assign dma_start = (state == IDLE && start && !busy) ||
                        (state == ROW_INIT) ||
-                       (state == DIV_DONE_S);
-    assign dma_cmd   = (state == IDLE)     ? 2'b00 :   // Q (triggers LOAD_Q)
-                       (state == LOAD_Q)   ? 2'b00 :   // Q (active load)
-                       (state == ROW_INIT) ? 2'b01 :   // K (first tile load)
-                       (state == TILE_LOAD) ? 2'b01 :  // K
-                       (state == STORE_O)  ? 2'b11 :   // O (store output)
-                       2'b00;                          // default: Q
+                       (state == O_WRITE);
+    assign dma_cmd   = (state == LOAD_Q)    ? 2'b00 :   // Q load
+                       (state == ROW_INIT)  ? 2'b01 :   // K (first tile load)
+                       (state == TILE_LOAD) ? 2'b01 :   // K
+                       (state == O_WRITE)   ? 2'b11 :   // O (write output via DMA)
+                       2'b00;                            // default: Q
 
     // MAC control
     assign mac_start = (state == TILE_LOAD && dma_done) ||

@@ -2,14 +2,14 @@
   "design_name": "flashattention",
   "top_module": "fa_top",
   "modules": [
-    "fa_regfile",
-    "fa_buffer_mgr",
-    "fa_divider",
-    "fa_softmax",
-    "fa_systolic",
-    "fa_dma",
-    "fa_ctrl",
-    "fa_top"
+    {"name": "fa_regfile", "file": "designs/flashattention/rtl/fa_regfile.sv"},
+    {"name": "fa_buffer_mgr", "file": "designs/flashattention/rtl/fa_buffer_mgr.sv"},
+    {"name": "fa_divider", "file": "designs/flashattention/rtl/fa_divider.sv"},
+    {"name": "fa_softmax", "file": "designs/flashattention/rtl/fa_softmax.sv"},
+    {"name": "fa_systolic", "file": "designs/flashattention/rtl/fa_systolic.sv"},
+    {"name": "fa_dma", "file": "designs/flashattention/rtl/fa_dma.sv"},
+    {"name": "fa_ctrl", "file": "designs/flashattention/rtl/fa_ctrl.sv"},
+    {"name": "fa_top", "file": "designs/flashattention/rtl/fa_top.sv"}
   ],
   "file_list": "designs/flashattention/rtl/file_list.f",
   "inputs": [
@@ -37,34 +37,37 @@
     {"path": "designs/flashattention/mas/M08_fa_regfile/datapath.md", "sha256": "e78322afb2651dc8970775f9b946cab8b55b2dcbeebeb921d59f3f525d2e581b"}
   ],
   "outputs": [
-    {"path": "designs/flashattention/rtl/fa_regfile.sv", "sha256": "69d035c3cf2e34d708bdadb20cf8536411ab60242a015c6e2afd690ed9283f8d"},
-    {"path": "designs/flashattention/rtl/fa_buffer_mgr.sv", "sha256": "41c78134259c33d36b1ef252f4ca8e52bbb51ba0a931c5fe4d7c5cf10e6b642e"},
-    {"path": "designs/flashattention/rtl/fa_divider.sv", "sha256": "0f6a370d4ad933d767a1f9942c995f7270d4e788b830545f2435fd9d04cfde24"},
+    {"path": "designs/flashattention/rtl/fa_regfile.sv", "sha256": "607fa00f5afb09163a9bfb92015b199455b93431886510fc7ed94a9a8e6f09b1"},
+    {"path": "designs/flashattention/rtl/fa_buffer_mgr.sv", "sha256": "8ce3ba1d8ab4b8e1f0ba093a38e9c5e74ecd0d9d15d3518a27e4beefbd4564a2"},
+    {"path": "designs/flashattention/rtl/fa_divider.sv", "sha256": "fec27c10163408edc8880448601c62494ceccda1f1b25cb4369c249b4b43fffb"},
     {"path": "designs/flashattention/rtl/fa_softmax.sv", "sha256": "1a429643ed0e3c528307538a7acc7f11cb2ce6a1decddd2da63a90df2e2edd28"},
-    {"path": "designs/flashattention/rtl/fa_systolic.sv", "sha256": "67b023c874112ecb761c791ade845b478ec743cfd4c4080808480d5c2b13d7d6"},
+    {"path": "designs/flashattention/rtl/fa_systolic.sv", "sha256": "37d79712357968fff80c893145e6d07293a6c9ae6e396dc8f2445f5bbae10c52"},
     {"path": "designs/flashattention/rtl/fa_dma.sv", "sha256": "ea5dcea3418cdb4fcf406ba10a20c1e32604916b234a3eeff4c43000d192082d"},
-    {"path": "designs/flashattention/rtl/fa_ctrl.sv", "sha256": "b894bb29a147d82974f4b1af71e8d312f53c82dd373bd18b2337d824b2fbc279"},
-    {"path": "designs/flashattention/rtl/fa_top.sv", "sha256": "8974fb1add0db9fee7c6d36f1f6c1ba58af806845ee9959c73d76f295863c7fe"},
+    {"path": "designs/flashattention/rtl/fa_ctrl.sv", "sha256": "9b2ea641fc56fb137f1e8e7855338bc2fc5f5c14e214cf8da18a1813fbc709aa"},
+    {"path": "designs/flashattention/rtl/fa_top.sv", "sha256": "9a613a423149c7298ef1dd7cea1f7777d0f01148c980746a792b1006b197b215"},
     {"path": "designs/flashattention/rtl/file_list.f", "sha256": "32322e21f291e3a324d905730c1685d7e55ee1d962f05ad1d46c36313c13b015"}
   ],
   "lint_clean": true,
   "lint_tool": "verilator 5.032",
   "lint_errors": 0,
-  "lint_warnings": 13,
+  "lint_warnings": 30,
   "lint_warnings_detail": [
-    "PINCONNECTEMPTY: empty port connections in fa_top (unconnected outputs)",
-    "WIDTHEXPAND: width mismatches in fa_buffer_mgr (array index sizing)",
-    "UNUSEDSIGNAL: unused signals in various modules (cosmetic)",
-    "UNUSEDPARAM: unused ADDR_CFG parameter in fa_regfile"
+    "UNUSEDSIGNAL: 15 (cosmetic: unused DFT ports, internal signals)",
+    "WIDTHEXPAND: 13 (pre-existing: buffer_mgr array index sizing)",
+    "UNUSEDPARAM: 1 (pre-existing: ADDR_CFG in fa_regfile)",
+    "PINCONNECTEMPTY: 1 (cosmetic: lut_rd_data empty connection)"
   ],
-  "iteration_count": 3,
-  "fix_iter": 0,
-  "global_fix_iter": 0,
-  "timestamp": "2026-06-04T18:30:00+08:00",
+  "iteration_count": 4,
+  "fix_iter": 1,
+  "global_fix_iter": 1,
+  "timestamp": "2026-06-04T22:15:00+08:00",
   "notes": [
-    "MAS sha256 values were placeholders from architect; actual hashes computed and stored in inputs[]",
-    "fa_top has several TODO connections for softmax<->buffer_mgr and divider<->softmax data paths",
-    "Scan chain is loopback (test_so=test_si) pending synthesis tool stitching",
-    "Exp LUT uses behavioral approximation; synthesis will infer ROM from buffer_mgr"
+    "rtl-needs-fix iteration 1: resolved 5 verification issues",
+    "fa_top: connected softmax m_old/l_old to buffer_mgr, m_new/l_new/correction to buffer_mgr/divider, divider quotient to O buffer via accumulator, proper causal mask with tile-aware logic",
+    "fa_divider: full rewrite for Q8.8 output - 48-bit restoring division with dividend<<8, 5-bit bit_pos to prevent overflow",
+    "fa_systolic: pipeline off-by-one fix - added MAC_FLUSH state (2 cycles) to drain pipeline, gated accumulation to skip first 2 fill cycles",
+    "fa_ctrl: added explicit LOAD_Q case in dma_cmd mux, added DIV_NEXT/O_WRITE states for 16-element divider loop, added div_elem_idx counter",
+    "fa_regfile: made wstrb byte-lane writes explicit with per-byte if(s_axil_wstrb[n]) assignments",
+    "Scan chain is loopback (test_so=test_si) pending synthesis tool stitching"
   ]
 }

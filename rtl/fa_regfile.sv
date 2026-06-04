@@ -170,13 +170,7 @@ module fa_regfile (
     end
 
     // =========================================================================
-    // Byte-lane write mask from wstrb
-    // =========================================================================
-    wire [31:0] wstrb_mask = {{8{s_axil_wstrb[3]}}, {8{s_axil_wstrb[2]}},
-                              {8{s_axil_wstrb[1]}}, {8{s_axil_wstrb[0]}}};
-
-    // =========================================================================
-    // Register Write Logic
+    // Register Write Logic (byte-lane writes via wstrb)
     // =========================================================================
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -204,18 +198,63 @@ module fa_regfile (
                 reg_file[0][1] <= 1'b0;  // SOFT_RESET self-clears
             end
 
-            // Normal register writes with byte-lane enables (read-modify-write)
+            // Normal register writes with per-byte-lane enables using s_axil_wstrb
             if (actual_wr_en) begin
                 case (wr_addr_latched)
-                    ADDR_Q_BASE_L: reg_file[3]  <= (reg_file[3]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_Q_BASE_H: reg_file[4]  <= (reg_file[4]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_K_BASE_L: reg_file[5]  <= (reg_file[5]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_K_BASE_H: reg_file[6]  <= (reg_file[6]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_V_BASE_L: reg_file[7]  <= (reg_file[7]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_V_BASE_H: reg_file[8]  <= (reg_file[8]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_O_BASE_L: reg_file[9]  <= (reg_file[9]  & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_O_BASE_H: reg_file[10] <= (reg_file[10] & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
-                    ADDR_STRIDE:   reg_file[11] <= (reg_file[11] & ~wstrb_mask) | (s_axil_wdata & wstrb_mask);
+                    ADDR_Q_BASE_L: begin
+                        if (s_axil_wstrb[0]) reg_file[3][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[3][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[3][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[3][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_Q_BASE_H: begin
+                        if (s_axil_wstrb[0]) reg_file[4][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[4][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[4][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[4][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_K_BASE_L: begin
+                        if (s_axil_wstrb[0]) reg_file[5][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[5][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[5][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[5][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_K_BASE_H: begin
+                        if (s_axil_wstrb[0]) reg_file[6][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[6][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[6][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[6][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_V_BASE_L: begin
+                        if (s_axil_wstrb[0]) reg_file[7][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[7][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[7][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[7][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_V_BASE_H: begin
+                        if (s_axil_wstrb[0]) reg_file[8][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[8][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[8][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[8][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_O_BASE_L: begin
+                        if (s_axil_wstrb[0]) reg_file[9][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[9][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[9][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[9][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_O_BASE_H: begin
+                        if (s_axil_wstrb[0]) reg_file[10][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[10][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[10][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[10][31:24] <= s_axil_wdata[31:24];
+                    end
+                    ADDR_STRIDE: begin
+                        if (s_axil_wstrb[0]) reg_file[11][7:0]   <= s_axil_wdata[7:0];
+                        if (s_axil_wstrb[1]) reg_file[11][15:8]  <= s_axil_wdata[15:8];
+                        if (s_axil_wstrb[2]) reg_file[11][23:16] <= s_axil_wdata[23:16];
+                        if (s_axil_wstrb[3]) reg_file[11][31:24] <= s_axil_wdata[31:24];
+                    end
                     default: ;  // do nothing for STATUS, CYCLES, REV
                 endcase
             end

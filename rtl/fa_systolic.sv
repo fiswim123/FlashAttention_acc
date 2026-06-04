@@ -21,9 +21,10 @@ module fa_systolic (
     // FSM States
     // =========================================================================
     typedef enum logic [1:0] {
-        IDLE     = 2'b00,
-        MAC_RUN  = 2'b01,
-        MAC_DONE = 2'b10
+        IDLE      = 2'b00,
+        MAC_RUN   = 2'b01,
+        MAC_FLUSH = 2'b11,
+        MAC_DONE  = 2'b10
     } mac_state_t;
 
     mac_state_t state, next;
@@ -40,10 +41,11 @@ module fa_systolic (
     always_comb begin
         next = state;
         case (state)
-            IDLE:     next = mac_start ? MAC_RUN : IDLE;
-            MAC_RUN:  next = (elem_cnt == 6'd63) ? MAC_DONE : MAC_RUN;
-            MAC_DONE: next = IDLE;
-            default:  next = IDLE;
+            IDLE:      next = mac_start ? MAC_RUN : IDLE;
+            MAC_RUN:   next = (elem_cnt == 6'd63) ? MAC_FLUSH : MAC_RUN;
+            MAC_FLUSH: next = (flush_cnt == 2'd1) ? MAC_DONE : MAC_FLUSH;
+            MAC_DONE:  next = IDLE;
+            default:   next = IDLE;
         endcase
     end
 
@@ -63,6 +65,20 @@ module fa_systolic (
             elem_cnt <= elem_cnt + 1'b1;
         else if (state == IDLE)
             elem_cnt <= 6'd0;
+    end
+
+    // =========================================================================
+    // Flush counter (2 cycles to drain pipeline after last element)
+    // =========================================================================
+    logic [1:0] flush_cnt;
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n)
+            flush_cnt <= 2'd0;
+        else if (state == MAC_FLUSH)
+            flush_cnt <= flush_cnt + 1'b1;
+        else
+            flush_cnt <= 2'd0;
     end
 
     // =========================================================================
@@ -129,6 +145,10 @@ module fa_systolic (
     // =========================================================================
     logic signed [39:0] acc_reg [0:15];
 
+    // Pipeline fill gate: skip first 2 cycles of MAC_RUN (pipeline latency)
+    // Accumulate only during valid pipeline output (cycles 2..63 of MAC_RUN)
+    wire acc_en = (state == MAC_RUN) && (elem_cnt >= 6'd2);
+
     // Accumulate: acc_new = acc_old + mul_result (sign-extend 32->40)
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -137,7 +157,7 @@ module fa_systolic (
         end else if (acc_clear) begin
             for (int i = 0; i < 16; i++)
                 acc_reg[i] <= 40'h0;
-        end else if (state == MAC_RUN) begin
+        end else if (acc_en) begin
             for (int i = 0; i < 16; i++) begin
                 logic signed [39:0] mul_ext;
                 mul_ext = {{8{mul_reg[i][31]}}, mul_reg[i]};

@@ -1,6 +1,8 @@
 // =============================================================================
 // Testbench: fa_regfile (Verilator-compatible)
-// Tests: AXI4-Lite read/write, register map, W1C, self-clearing, write protect
+// Tests: AXI4-Lite read/write, register map, W1C, self-clearing, write protect,
+//        wstrb byte-lane writes
+// RTL: wstrb byte-lane writes implemented with per-byte if(s_axil_wstrb[n])
 // =============================================================================
 `timescale 1ns/1ps
 
@@ -30,14 +32,19 @@ module tb_fa_regfile;
     initial clk = 0;
     always #5 clk = ~clk;
 
-    task axil_write(input [5:0] addr, input [31:0] data);
+    task axil_write(input [5:0] addr, input [31:0] data, input [3:0] strb);
         s_axil_awaddr = addr; s_axil_awvalid = 1; s_axil_wvalid = 0; s_axil_bready = 0;
         for (tc = 0; tc < 50; tc++) begin @(posedge clk); if (s_axil_awready) begin s_axil_awvalid = 0; tc = 50; end end
-        s_axil_wdata = data; s_axil_wstrb = 4'hF; s_axil_wvalid = 1;
+        s_axil_wdata = data; s_axil_wstrb = strb; s_axil_wvalid = 1;
         for (tc = 0; tc < 50; tc++) begin @(posedge clk); if (s_axil_wready) begin s_axil_wvalid = 0; tc = 50; end end
         s_axil_bready = 1;
         for (tc = 0; tc < 50; tc++) begin @(posedge clk); if (s_axil_bvalid) begin s_axil_bready = 0; tc = 50; end end
         @(posedge clk);
+    endtask
+
+    // Convenience wrapper with full wstrb
+    task axil_write_full(input [5:0] addr, input [31:0] data);
+        axil_write(addr, data, 4'hF);
     endtask
 
     logic [31:0] rd_result;
@@ -68,10 +75,10 @@ module tb_fa_regfile;
         check("REV register", rd_result, 32'hFA_00_01_00);
 
         // T2-T3: Q_BASE write/read
-        axil_write(6'h0C, 32'hDEAD_BEEF);
+        axil_write_full(6'h0C, 32'hDEAD_BEEF);
         axil_read(6'h0C, rd_result);
         check("Q_BASE_L write/read", rd_result, 32'hDEAD_BEEF);
-        axil_write(6'h10, 32'hCAFE_BABE);
+        axil_write_full(6'h10, 32'hCAFE_BABE);
         axil_read(6'h10, rd_result);
         check("Q_BASE_H write/read", rd_result, 32'hCAFE_BABE);
 
@@ -81,10 +88,10 @@ module tb_fa_regfile;
         check("reg_q_base[63:32]", reg_q_base[63:32], 32'hCAFE_BABE);
 
         // T5: All base addresses
-        axil_write(6'h14, 32'h11111111); axil_write(6'h18, 32'h22222222);
-        axil_write(6'h1C, 32'h33333333); axil_write(6'h20, 32'h44444444);
-        axil_write(6'h24, 32'h55555555); axil_write(6'h28, 32'h66666666);
-        axil_write(6'h2C, 32'h00000100);
+        axil_write_full(6'h14, 32'h11111111); axil_write_full(6'h18, 32'h22222222);
+        axil_write_full(6'h1C, 32'h33333333); axil_write_full(6'h20, 32'h44444444);
+        axil_write_full(6'h24, 32'h55555555); axil_write_full(6'h28, 32'h66666666);
+        axil_write_full(6'h2C, 32'h00000100);
         #1;
         check("K_BASE_L", reg_k_base[31:0], 32'h11111111);
         check("K_BASE_H", reg_k_base[63:32], 32'h22222222);
@@ -95,27 +102,26 @@ module tb_fa_regfile;
         check("STRIDE", reg_stride, 32'h00000100);
 
         // T6: START self-clears (pulse behavior)
-        // Write START, it self-clears on next clock. Verify it's not stuck.
-        axil_write(6'h00, 32'h1);
+        axil_write_full(6'h00, 32'h1);
         repeat(3) @(posedge clk);
         #1;
         check("START self-cleared", {31'h0, reg_start}, 32'h0);
 
         // T7: SOFT_RESET self-clears (pulse behavior)
-        axil_write(6'h00, 32'h2);
+        axil_write_full(6'h00, 32'h2);
         repeat(3) @(posedge clk);
         #1;
         check("SOFT_RESET self-cleared", {31'h0, reg_soft_reset}, 32'h0);
 
         // T8: CAUSAL_EN sticky
-        axil_write(6'h00, 32'h4);
+        axil_write_full(6'h00, 32'h4);
         repeat(2) @(posedge clk);
         #1;
         check("CAUSAL_EN set", {31'h0, reg_causal_en}, 32'h1);
         repeat(5) @(posedge clk);
         #1;
         check("CAUSAL_EN sticky", {31'h0, reg_causal_en}, 32'h1);
-        axil_write(6'h00, 32'h0);
+        axil_write_full(6'h00, 32'h0);
         repeat(2) @(posedge clk);
         #1;
         check("CAUSAL_EN cleared", {31'h0, reg_causal_en}, 32'h0);
@@ -132,7 +138,7 @@ module tb_fa_regfile;
         hw_done = 1; repeat(3) @(posedge clk); hw_done = 0; repeat(2) @(posedge clk);
         axil_read(6'h04, rd_result);
         check("DONE set", rd_result[1], 1'b1);
-        axil_write(6'h04, 32'h2);
+        axil_write_full(6'h04, 32'h2);
         repeat(2) @(posedge clk);
         axil_read(6'h04, rd_result);
         check("DONE W1C", rd_result[1], 1'b0);
@@ -141,7 +147,7 @@ module tb_fa_regfile;
         hw_error = 1; repeat(3) @(posedge clk); hw_error = 0; repeat(2) @(posedge clk);
         axil_read(6'h04, rd_result);
         check("ERROR set", rd_result[2], 1'b1);
-        axil_write(6'h04, 32'h4);
+        axil_write_full(6'h04, 32'h4);
         repeat(2) @(posedge clk);
         axil_read(6'h04, rd_result);
         check("ERROR W1C", rd_result[2], 1'b0);
@@ -153,7 +159,7 @@ module tb_fa_regfile;
 
         // T13: Write protect when BUSY
         hw_busy = 1; repeat(2) @(posedge clk);
-        axil_write(6'h0C, 32'hFFFFFFFF);
+        axil_write_full(6'h0C, 32'hFFFFFFFF);
         axil_read(6'h0C, rd_result);
         check("Write protect Q_BASE_L", rd_result, 32'hDEADBEEF);
         hw_busy = 0; repeat(2) @(posedge clk);
@@ -167,45 +173,69 @@ module tb_fa_regfile;
             axil_read(6'(a*4), rd_result);
 
         // T16: Verify write-through after BUSY clears
-        axil_write(6'h0C, 32'hCAFEBABE);
+        axil_write_full(6'h0C, 32'hCAFEBABE);
         axil_read(6'h0C, rd_result);
         check("Write after BUSY clear", rd_result, 32'hCAFEBABE);
 
         // T17: Toggle coverage - write all 1s to base addresses
-        axil_write(6'h0C, 32'hFFFFFFFF);
-        axil_write(6'h10, 32'hFFFFFFFF);
-        axil_write(6'h14, 32'hFFFFFFFF);
-        axil_write(6'h18, 32'hFFFFFFFF);
-        axil_write(6'h1C, 32'hFFFFFFFF);
-        axil_write(6'h20, 32'hFFFFFFFF);
-        axil_write(6'h24, 32'hFFFFFFFF);
-        axil_write(6'h28, 32'hFFFFFFFF);
-        axil_write(6'h2C, 32'hFFFFFFFF);
+        axil_write_full(6'h0C, 32'hFFFFFFFF);
+        axil_write_full(6'h10, 32'hFFFFFFFF);
+        axil_write_full(6'h14, 32'hFFFFFFFF);
+        axil_write_full(6'h18, 32'hFFFFFFFF);
+        axil_write_full(6'h1C, 32'hFFFFFFFF);
+        axil_write_full(6'h20, 32'hFFFFFFFF);
+        axil_write_full(6'h24, 32'hFFFFFFFF);
+        axil_write_full(6'h28, 32'hFFFFFFFF);
+        axil_write_full(6'h2C, 32'hFFFFFFFF);
         axil_read(6'h0C, rd_result);
         check("All 1s Q_BASE_L", rd_result, 32'hFFFFFFFF);
         axil_read(6'h2C, rd_result);
         check("All 1s STRIDE", rd_result, 32'hFFFFFFFF);
 
         // T18: Write alternating pattern
-        axil_write(6'h0C, 32'hAAAAAAAA);
-        axil_write(6'h10, 32'h55555555);
+        axil_write_full(6'h0C, 32'hAAAAAAAA);
+        axil_write_full(6'h10, 32'h55555555);
         axil_read(6'h0C, rd_result);
         check("Alt pattern L", rd_result, 32'hAAAAAAAA);
         axil_read(6'h10, rd_result);
         check("Alt pattern H", rd_result, 32'h55555555);
 
-        // T19: wstrb write test (regfile writes full 32-bit regardless of wstrb)
-        @(posedge clk);
-        s_axil_awaddr = 6'h0C; s_axil_awvalid = 1;
-        for (tc=0;tc<50;tc++) begin @(posedge clk); if(s_axil_awready) begin s_axil_awvalid=0; tc=50; end end
-        s_axil_wdata = 32'h12345678; s_axil_wstrb = 4'h3; s_axil_wvalid = 1;
-        for (tc=0;tc<50;tc++) begin @(posedge clk); if(s_axil_wready) begin s_axil_wvalid=0; tc=50; end end
-        s_axil_bready = 1;
-        for (tc=0;tc<50;tc++) begin @(posedge clk); if(s_axil_bvalid) begin s_axil_bready=0; tc=50; end end
-        @(posedge clk);
+        // T19: wstrb byte-lane write - only low byte
+        axil_write_full(6'h0C, 32'hFFFFFFFF);  // Set all bits first
+        axil_write(6'h0C, 32'h12345600, 4'h1);  // Only byte 0 (wdata[7:0]=0x00)
         axil_read(6'h0C, rd_result);
-        // RTL does full 32-bit write (wstrb not used in write logic)
-        check("wstrb full write", rd_result, 32'h12345678);
+        // byte 0 = 0x00 (from wdata), bytes 1-3 = 0xFF (unchanged)
+        check("wstrb byte0 only", rd_result, 32'hFFFFFF00);
+
+        // T20: wstrb byte-lane write - only high byte (byte 3 = bits [31:24])
+        axil_write_full(6'h0C, 32'hAAAAAAAA);  // Reset to known value
+        axil_write(6'h0C, 32'hBB000000, 4'h8);  // Only byte 3 (wdata[31:24]=0xBB)
+        axil_read(6'h0C, rd_result);
+        check("wstrb byte3 only", rd_result, 32'hBBAAAAAA);
+
+        // T21: wstrb byte-lane write - bytes 0 and 2
+        axil_write_full(6'h0C, 32'h11111111);
+        axil_write(6'h0C, 32'h00CC00DD, 4'h5);  // bytes 0 and 2
+        axil_read(6'h0C, rd_result);
+        check("wstrb byte0+2", rd_result, 32'h11CC11DD);
+
+        // T22: wstrb byte-lane write - bytes 1 and 3
+        axil_write_full(6'h0C, 32'h22222222);
+        axil_write(6'h0C, 32'hEE00FF00, 4'hA);  // bytes 1 and 3
+        axil_read(6'h0C, rd_result);
+        check("wstrb byte1+3", rd_result, 32'hEE22FF22);
+
+        // T23: wstrb=0 (no write)
+        axil_write_full(6'h0C, 32'hDEADBEEF);
+        axil_write(6'h0C, 32'h00000000, 4'h0);  // No bytes written
+        axil_read(6'h0C, rd_result);
+        check("wstrb=0 no write", rd_result, 32'hDEADBEEF);
+
+        // T24: wstrb on STRIDE register
+        axil_write_full(6'h2C, 32'h11223344);
+        axil_write(6'h2C, 32'h00000000, 4'h3);  // Only bytes 0-1
+        axil_read(6'h2C, rd_result);
+        check("wstrb STRIDE low16", rd_result, 32'h11220000);
 
         $display("========================================");
         $display("  fa_regfile: %0d passed, %0d failed", tests_passed, tests_failed);

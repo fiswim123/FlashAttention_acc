@@ -1,6 +1,7 @@
 // =============================================================================
 // Module: fa_divider
-// Description: Iterative SRT divider, 16 fixed iterations. 40-bit / 40-bit -> 16-bit Q8.8
+// Description: Iterative restoring divider, 16 iterations. 40-bit Q8.32 / 40-bit Q8.32 -> 16-bit Q8.8
+//              Dividend is left-shifted 8 bits to produce Q8.8 output from Q8.32 inputs.
 // MAS: M06 | Type: compute | Deps: none (leaf)
 // =============================================================================
 module fa_divider (
@@ -28,9 +29,9 @@ module fa_divider (
     // =========================================================================
     // Registers
     // =========================================================================
-    logic [3:0]  iter_cnt;
-    logic [39:0] remainder_reg;
-    logic [39:0] divisor_reg;
+    logic [4:0]  iter_cnt;
+    logic [47:0] remainder_reg;   // Q8.40 (dividend shifted left 8 bits)
+    logic [47:0] divisor_reg;     // Q8.40 (divisor zero-padded to 48 bits)
     logic [15:0] quotient_reg;
     logic        div_by_zero;
 
@@ -55,7 +56,7 @@ module fa_divider (
                     next = DIV_RUN;
             end
             DIV_RUN: begin
-                if (div_by_zero || iter_cnt == 4'd15)
+                if (div_by_zero || iter_cnt == 5'd15)
                     next = DIV_DONE;
             end
             DIV_DONE: next = IDLE;
@@ -64,88 +65,95 @@ module fa_divider (
     end
 
     // =========================================================================
-    // SRT Iteration Logic
+    // Restoring Division Algorithm
     // =========================================================================
-    // Iteration i: trial subtract (remainder - divisor << i)
-    // If trial >= 0: remainder = trial, quotient[i] = 1
-    // Else: quotient[i] = 0
-    // Iteration order: i = 15, 14, ..., 0 (MSB first for Q8.8 output)
+    // For Q8.8 output from Q8.32 inputs:
+    //   quotient = (dividend << 8) / divisor
+    //   In Q8.40 arithmetic: remainder(48b) / divisor(48b) -> quotient(16b)
     //
-    // For Q8.8 output from 40-bit inputs:
-    // dividend is Q8.32, divisor is Q8.32, quotient is Q8.8
-    // We shift the divisor relative to the remainder to extract quotient bits
+    // Iteration i (i = 0..15, MSB first):
+    //   bit_pos = 15 - i
+    //   trial   = (remainder << 1) - divisor
+    //   if trial >= 0: remainder = trial, quotient[bit_pos] = 1
+    //   else: quotient[bit_pos] = 0
 
-    logic [40:0] trial;
-    logic [39:0] shifted_divisor;
+    logic [47:0] divisor_shifted;
+    logic [48:0] trial;
+    logic [4:0]  bit_pos;
 
-    // The shift amount for iteration i (iter_cnt maps to bit position)
-    // iter_cnt 0 -> bit 15 (MSB of quotient)
-    // iter_cnt 15 -> bit 0 (LSB of quotient)
-    wire [3:0] bit_pos = 4'd15 - iter_cnt;
+    assign bit_pos = 5'd15 - iter_cnt;
 
-    // Shift divisor left by bit_pos positions
-    // We use a simple mux-based shifter for synthesis
+    // Trial subtraction: (remainder << 1) - divisor
+    // Shift divisor left by (bit_pos + 1) for trial comparison
     always_comb begin
-        shifted_divisor = divisor_reg;
-        case (bit_pos)
-            4'd0:  shifted_divisor = divisor_reg;
-            4'd1:  shifted_divisor = {divisor_reg[38:0], 1'b0};
-            4'd2:  shifted_divisor = {divisor_reg[37:0], 2'b0};
-            4'd3:  shifted_divisor = {divisor_reg[36:0], 3'b0};
-            4'd4:  shifted_divisor = {divisor_reg[35:0], 4'b0};
-            4'd5:  shifted_divisor = {divisor_reg[34:0], 5'b0};
-            4'd6:  shifted_divisor = {divisor_reg[33:0], 6'b0};
-            4'd7:  shifted_divisor = {divisor_reg[32:0], 7'b0};
-            4'd8:  shifted_divisor = {divisor_reg[31:0], 8'b0};
-            4'd9:  shifted_divisor = {divisor_reg[30:0], 9'b0};
-            4'd10: shifted_divisor = {divisor_reg[29:0], 10'b0};
-            4'd11: shifted_divisor = {divisor_reg[28:0], 11'b0};
-            4'd12: shifted_divisor = {divisor_reg[27:0], 12'b0};
-            4'd13: shifted_divisor = {divisor_reg[26:0], 13'b0};
-            4'd14: shifted_divisor = {divisor_reg[25:0], 14'b0};
-            4'd15: shifted_divisor = {divisor_reg[24:0], 15'b0};
+        divisor_shifted = 48'h0;
+        case (bit_pos + 5'd1)
+            5'd1:  divisor_shifted = {divisor_reg[46:0], 1'b0};
+            5'd2:  divisor_shifted = {divisor_reg[45:0], 2'b0};
+            5'd3:  divisor_shifted = {divisor_reg[44:0], 3'b0};
+            5'd4:  divisor_shifted = {divisor_reg[43:0], 4'b0};
+            5'd5:  divisor_shifted = {divisor_reg[42:0], 5'b0};
+            5'd6:  divisor_shifted = {divisor_reg[41:0], 6'b0};
+            5'd7:  divisor_shifted = {divisor_reg[40:0], 7'b0};
+            5'd8:  divisor_shifted = {divisor_reg[39:0], 8'b0};
+            5'd9:  divisor_shifted = {divisor_reg[38:0], 9'b0};
+            5'd10: divisor_shifted = {divisor_reg[37:0], 10'b0};
+            5'd11: divisor_shifted = {divisor_reg[36:0], 11'b0};
+            5'd12: divisor_shifted = {divisor_reg[35:0], 12'b0};
+            5'd13: divisor_shifted = {divisor_reg[34:0], 13'b0};
+            5'd14: divisor_shifted = {divisor_reg[33:0], 14'b0};
+            5'd15: divisor_shifted = {divisor_reg[32:0], 15'b0};
+            5'd16: divisor_shifted = {divisor_reg[31:0], 16'b0};
+            5'd17: divisor_shifted = {divisor_reg[30:0], 17'b0};
+            5'd18: divisor_shifted = {divisor_reg[29:0], 18'b0};
+            5'd19: divisor_shifted = {divisor_reg[28:0], 19'b0};
+            5'd20: divisor_shifted = {divisor_reg[27:0], 20'b0};
+            5'd21: divisor_shifted = {divisor_reg[26:0], 21'b0};
+            5'd22: divisor_shifted = {divisor_reg[25:0], 22'b0};
+            5'd23: divisor_shifted = {divisor_reg[24:0], 23'b0};
+            default: divisor_shifted = 48'h0;
         endcase
     end
 
-    // Trial subtraction
-    assign trial = {1'b0, remainder_reg} - {1'b0, shifted_divisor};
+    // Trial: remainder - shifted_divisor (49-bit for sign detection)
+    assign trial = {1'b0, remainder_reg} - {1'b0, divisor_shifted};
 
-    // Divide-by-zero detection
-    assign div_by_zero = (divisor == 40'h0) && (state == DIV_RUN);
+    // Divide-by-zero detection (check registered divisor during DIV_RUN)
+    assign div_by_zero = (divisor_reg == 48'h0) && (state == DIV_RUN);
 
     // =========================================================================
     // Iteration counter and data path register update
     // =========================================================================
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            iter_cnt     <= 4'd0;
-            remainder_reg <= 40'h0;
-            divisor_reg   <= 40'h0;
+            iter_cnt      <= 5'd0;
+            remainder_reg <= 48'h0;
+            divisor_reg   <= 48'h0;
             quotient_reg  <= 16'h0;
         end else begin
             case (state)
                 IDLE: begin
                     if (div_start) begin
-                        iter_cnt     <= 4'd0;
-                        remainder_reg <= dividend;
-                        divisor_reg   <= divisor;
+                        iter_cnt      <= 5'd0;
+                        remainder_reg <= {dividend, 8'b0};   // Q8.32 -> Q8.40
+                        divisor_reg   <= {8'b0, divisor};     // Q8.32 -> Q8.40
                         quotient_reg  <= 16'h0;
                     end
                 end
                 DIV_RUN: begin
                     if (!div_by_zero) begin
                         iter_cnt <= iter_cnt + 1'b1;
-                        if (!trial[40]) begin
+                        if (!trial[48]) begin
                             // Trial succeeded: remainder = trial, set quotient bit
-                            remainder_reg <= trial[39:0];
-                            quotient_reg[bit_pos] <= 1'b1;
+                            remainder_reg <= trial[47:0];
+                            quotient_reg[bit_pos[3:0]] <= 1'b1;
                         end
                         // else: quotient bit stays 0, remainder unchanged
                     end
                 end
                 DIV_DONE: begin
                     // Clear on exit
-                    iter_cnt <= 4'd0;
+                    iter_cnt <= 5'd0;
                 end
                 default: ;
             endcase
