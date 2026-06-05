@@ -1,0 +1,122 @@
+{
+  "test_name": "FlashAttention E2E Verification",
+  "parameters": {
+    "S": 256,
+    "d": 64,
+    "Bc": 16,
+    "data_format": "Q8.8",
+    "accumulation": "40-bit"
+  },
+  "error_thresholds": {
+    "mean_abs_error": 0.03,
+    "max_abs_error": 0.1
+  },
+  "test_vectors": [
+    {
+      "seed": 42,
+      "Q_range": [
+        -512,
+        512
+      ],
+      "K_range": [
+        -512,
+        512
+      ],
+      "V_range": [
+        -512,
+        512
+      ],
+      "O_range": [
+        -505,
+        480
+      ]
+    },
+    {
+      "seed": 43,
+      "Q_range": [
+        -512,
+        512
+      ],
+      "K_range": [
+        -512,
+        512
+      ],
+      "V_range": [
+        -512,
+        512
+      ],
+      "O_range": [
+        -506,
+        500
+      ]
+    },
+    {
+      "seed": 44,
+      "Q_range": [
+        -512,
+        512
+      ],
+      "K_range": [
+        -512,
+        512
+      ],
+      "V_range": [
+        -512,
+        512
+      ],
+      "O_range": [
+        -497,
+        484
+      ]
+    },
+    {
+      "seed": 45,
+      "Q_range": [
+        -512,
+        512
+      ],
+      "K_range": [
+        -512,
+        512
+      ],
+      "V_range": [
+        -512,
+        512
+      ],
+      "O_range": [
+        -492,
+        505
+      ]
+    },
+    {
+      "seed": 46,
+      "Q_range": [
+        -512,
+        512
+      ],
+      "K_range": [
+        -512,
+        512
+      ],
+      "V_range": [
+        -512,
+        512
+      ],
+      "O_range": [
+        -508,
+        512
+      ]
+    }
+  ],
+  "golden_model": {
+    "implementation": "FP32 tiled FlashAttention",
+    "algorithm": "Online softmax with tiling",
+    "numerical_stability": "exp(x - max(x)) prevents overflow"
+  },
+  "verification_status": {
+    "golden_model": "PASS",
+    "test_vectors_generated": "PASS",
+    "rtl_simulation": "PENDING",
+    "error_comparison": "PENDING"
+  }
+}
