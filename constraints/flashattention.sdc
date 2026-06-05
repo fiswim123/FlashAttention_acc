@@ -58,8 +58,8 @@ set_output_delay -clock clk 2.0 [get_ports {m_axi_rready}]
 set_false_path -from [get_ports rst_n]
 
 # Drive strength
-set_driving_cell -lib_cell INVx1 [get_ports clk]
-set_driving_cell -lib_cell INVx1 [get_ports rst_n]
+set_driving_cell -lib_cell INVx1_ASAP7_75t_R [get_ports clk]
+set_driving_cell -lib_cell INVx1_ASAP7_75t_R [get_ports rst_n]
 
 # Load
 set_load 0.01 [all_outputs]

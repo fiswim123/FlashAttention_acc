@@ -1,0 +1,23 @@
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_AO_RVT_TT_nldm_211120.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_INVBUF_RVT_TT_nldm_220122.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+
+read_verilog -sv rtl/fa_regfile.sv rtl/sram_sp_64x16.v rtl/sram_sp_1024x16.v rtl/sram_sp_256x16.v rtl/fa_buffer_mgr.sv rtl/fa_divider.sv rtl/fa_softmax.sv rtl/fa_systolic.sv rtl/fa_dma.sv rtl/fa_ctrl.sv rtl/fa_top.sv
+
+blackbox sram_sp_64x16 sram_sp_1024x16 sram_sp_256x16
+hierarchy -top fa_top
+proc; opt; flatten; opt
+
+# Map to generic gates first
+techmap
+opt
+
+# Map DFFs to ASAP7
+dfflibmap -liberty /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+
+# Map remaining logic to ASAP7 using simplemap
+simplemap
+opt; clean
+stat
+
+write_verilog -noattr synth/netlist_techmap.v

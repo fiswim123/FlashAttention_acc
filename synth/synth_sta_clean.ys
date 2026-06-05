@@ -1,0 +1,35 @@
+# FlashAttention - Synthesis for STA (clean flat netlist)
+
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_AO_RVT_TT_nldm_211120.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_INVBUF_RVT_TT_nldm_220122.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_SRAM_TT_nldm_220123.lib
+
+read_verilog -sv rtl/fa_regfile.sv
+read_verilog rtl/sram_sp_64x16.v
+read_verilog rtl/sram_sp_1024x16.v
+read_verilog rtl/sram_sp_256x16.v
+read_verilog -sv rtl/fa_buffer_mgr.sv
+read_verilog -sv rtl/fa_divider.sv
+read_verilog -sv rtl/fa_softmax.sv
+read_verilog -sv rtl/fa_systolic.sv
+read_verilog -sv rtl/fa_dma.sv
+read_verilog -sv rtl/fa_ctrl.sv
+read_verilog -sv rtl/fa_top.sv
+
+hierarchy -top fa_top -check
+proc
+opt
+memory_map
+opt
+flatten
+opt
+techmap
+opt
+dfflibmap -liberty /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+opt
+clean -purge
+stat
+
+# Write flat netlist with no hierarchical names
+write_verilog -noattr -noexpr -nohex -nodec synth/netlist_sta_flat.v

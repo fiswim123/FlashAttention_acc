@@ -4,5 +4,8 @@ read_liberty /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SE
 read_verilog synth/netlist_sta_clean.v
 link_design fa_top
 read_sdc constraints/flashattention.sdc
-report_checks -path_delay max
+
+# Simple timing report
+report_checks
+
 exit
