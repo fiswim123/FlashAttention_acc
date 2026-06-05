@@ -14,6 +14,9 @@ VFLAGS    := --binary --trace --coverage --top-module \
              -Wno-UNUSED -Wno-UNDRIVEN -Wno-PINCONNECTEMPTY -Wno-WIDTHEXPAND
 
 RTL_SRCS := $(RTL_DIR)/fa_regfile.sv \
+            $(RTL_DIR)/sram_sp_64x16.v \
+            $(RTL_DIR)/sram_sp_1024x16.v \
+            $(RTL_DIR)/sram_sp_256x16.v \
             $(RTL_DIR)/fa_buffer_mgr.sv \
             $(RTL_DIR)/fa_divider.sv \
             $(RTL_DIR)/fa_softmax.sv \

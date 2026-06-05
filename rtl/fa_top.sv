@@ -247,7 +247,7 @@ module fa_top (
     fa_ctrl u_ctrl (
         .clk          (clk),
         .rst_n        (rst_n_int),
-        .start        (reg_start),
+        .start        (reg_start & rst_n_int),
         .busy         (ctrl_busy),
         .done         (ctrl_done),
         .error        (ctrl_error),
