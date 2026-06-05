@@ -1,0 +1,47 @@
+# FlashAttention - Full Synthesis with ASAP7 NLDM
+# TT corner (Typical-Typical, 0.70V, 25C)
+
+# Read liberty files
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_AO_RVT_TT_nldm_211120.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_INVBUF_RVT_TT_nldm_220122.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+read_liberty -lib /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_SRAM_TT_nldm_220123.lib
+
+# Read RTL
+read_verilog -sv rtl/fa_regfile.sv
+read_verilog -sv rtl/fa_buffer_mgr.sv
+read_verilog -sv rtl/fa_divider.sv
+read_verilog -sv rtl/fa_softmax.sv
+read_verilog -sv rtl/fa_systolic.sv
+read_verilog -sv rtl/fa_dma.sv
+read_verilog -sv rtl/fa_ctrl.sv
+read_verilog -sv rtl/fa_top.sv
+
+# Elaborate
+hierarchy -top fa_top -check
+proc
+opt
+flatten
+opt
+
+# Technology mapping
+techmap
+opt
+
+# DFF mapping
+dfflibmap -liberty /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_SEQ_RVT_TT_nldm_220123.lib
+
+# Logic optimization with ABC
+abc -liberty /home/ghoti/Babel/libs/asap7/asap7sc7p5t_27/lib/NLDM/asap7sc7p5t_AO_RVT_TT_nldm_211120.lib -script +resyn2
+
+# Final cleanup
+opt
+clean
+
+# Statistics
+stat
+
+# Write outputs
+write_verilog -noattr synth/netlist_full.v
+write_json synth/netlist_full.json
+write_blif synth/netlist_full.blif

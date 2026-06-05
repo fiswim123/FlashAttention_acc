@@ -5,6 +5,9 @@
 // =============================================================================
 // Leaf modules (no dependencies)
 fa_regfile.sv
+sram_sp_64x16.v
+sram_sp_1024x16.v
+sram_sp_256x16.v
 fa_buffer_mgr.sv
 fa_divider.sv
 fa_softmax.sv

@@ -2,6 +2,7 @@
 // Module: fa_buffer_mgr
 // Description: On-chip buffer manager with dual-buffered K/V SRAMs, Q/O buffers,
 //              and exp LUT ROM. Priority arbitration for MAC/DMA access.
+//              Uses SRAM macro instances for storage.
 // MAS: M07 | Type: storage | Deps: none (leaf)
 // =============================================================================
 module fa_buffer_mgr (
@@ -42,45 +43,6 @@ module fa_buffer_mgr (
 );
 
     // =========================================================================
-    // Storage arrays (behavioral SRAM / register arrays for synthesis inference)
-    // =========================================================================
-    // Q buffer: 64 entries x 16-bit = 128 bytes (single buffer)
-    logic [15:0] q_buf [0:63];
-
-    // K buffer: 2 banks x 1024 entries x 16-bit = 4KB total (dual buffer)
-    logic [15:0] k_buf_a [0:1023];
-    logic [15:0] k_buf_b [0:1023];
-
-    // V buffer: 2 banks x 1024 entries x 16-bit = 4KB total (dual buffer)
-    logic [15:0] v_buf_a [0:1023];
-    logic [15:0] v_buf_b [0:1023];
-
-    // O buffer: 64 entries x 16-bit = 128 bytes (single buffer)
-    logic [15:0] o_buf [0:63];
-
-    // Exp LUT ROM: 256 entries x 16-bit = 512 bytes
-    // Pre-initialized with exp(x) values for x in [-8, 0) mapped to [0, 255]
-    logic [15:0] exp_lut [0:255];
-
-    // Initialize exp LUT with approximate exp values (Q0.16 format, values in [0,1])
-    initial begin
-        // Approximate exp values: exp(-8) to exp(0), 256 entries
-        // Using simple linear approximation for synthesis
-        for (int i = 0; i < 256; i++) begin
-            // exp(i * 8/256 - 8) mapped to Q0.16
-            // Simplified: most entries near 0 for large negative, near 65535 for i=255
-            if (i < 64)
-                exp_lut[i] = 16'(i);           // very small values
-            else if (i < 128)
-                exp_lut[i] = 16'((i - 64) * 4 + 64);
-            else if (i < 192)
-                exp_lut[i] = 16'((i - 128) * 16 + 320);
-            else
-                exp_lut[i] = 16'((i - 192) * 64 + 1344);
-        end
-    end
-
-    // =========================================================================
     // Arbitration: MAC > DMA > LUT
     // =========================================================================
     logic mac_access;
@@ -92,119 +54,193 @@ module fa_buffer_mgr (
     assign lut_access = lut_rd_en & ~mac_access & ~dma_access;
 
     // =========================================================================
-    // DMA Write Path
+    // DMA Address Decoding
     // =========================================================================
-    // DMA writes 128-bit (8 x 16-bit elements) per beat
-    // Address decoding: bits [11:10] select buffer, bits [9:3] select entry group
     wire [1:0] dma_buf_sel = dma_wr_addr[11:10];
-    wire [8:0] dma_entry   = dma_wr_addr[9:1];  // 16-bit word address
-
-    always_ff @(posedge clk) begin
-        if (dma_wr_en && dma_access) begin
-            case (dma_buf_sel)
-                2'b00: begin  // Q buffer (64 entries)
-                    for (int i = 0; i < 8; i++) begin
-                        if (dma_entry + i < 64)
-                            q_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                    end
-                end
-                2'b01: begin  // K buffer (dual)
-                    for (int i = 0; i < 8; i++) begin
-                        if (buf_sel == 1'b0)
-                            k_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                        else
-                            k_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                    end
-                end
-                2'b10: begin  // V buffer (dual)
-                    for (int i = 0; i < 8; i++) begin
-                        if (buf_sel == 1'b0)
-                            v_buf_a[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                        else
-                            v_buf_b[dma_entry + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                    end
-                end
-                2'b11: begin  // O buffer
-                    for (int i = 0; i < 8; i++) begin
-                        if (dma_entry + i[2:0] < 64)
-                            o_buf[dma_entry[5:0] + i[2:0]] <= dma_wr_data[i*16 +: 16];
-                    end
-                end
-            endcase
-        end
-        // O buffer write from MAC (256-bit = 16 x 16-bit)
-        if (o_wr_en) begin
-            for (int i = 0; i < 16; i++)
-                o_buf[i[5:0]] <= o_wr_data[i*16 +: 16];
-        end
-    end
+    wire [9:0] dma_entry   = dma_wr_addr[9:0];
 
     // =========================================================================
-    // DMA Read Path (from O buffer)
+    // Q Buffer: 64 x 16-bit SRAM
     // =========================================================================
-    always_ff @(posedge clk) begin
-        if (dma_rd_en && dma_access) begin
-            for (int i = 0; i < 8; i++)
-                dma_rd_data[i*16 +: 16] <= o_buf[dma_rd_addr[5:0] + i[2:0]];
-        end
-    end
+    wire        q_ce   = mac_q_en | (dma_wr_en && dma_access && dma_buf_sel == 2'b00);
+    wire        q_we   = dma_wr_en && dma_access && dma_buf_sel == 2'b00;
+    wire [5:0]  q_addr = mac_q_en ? 6'd0 : dma_entry[5:0];
+    wire [15:0] q_wdata = dma_wr_data[15:0];
+    wire [15:0] q_rdata;
 
-    // =========================================================================
-    // MAC Read Path (Q, K, V) - 256-bit output (16 x 16-bit elements)
-    // =========================================================================
-    // Q read: single buffer, 16 elements starting from mac_q_addr
-    // K/V read: dual-buffered, selected by buf_sel (inverted for read vs write)
+    sram_sp_64x16 u_q_buf (
+        .clk    (clk),
+        .ce_in  (q_ce),
+        .we_in  (q_we),
+        .addr_in(q_addr),
+        .wd_in  (q_wdata),
+        .rd_out (q_rdata)
+    );
+
+    // Q read: MAC reads 16 elements starting from address 0
     logic [255:0] mac_q_data_reg;
-    logic [255:0] mac_k_data_reg;
-    logic [255:0] mac_v_data_reg;
-
     always_ff @(posedge clk) begin
         if (mac_q_en) begin
-            for (int i = 0; i < 16; i++)
-                mac_q_data_reg[i*16 +: 16] <= q_buf[i[5:0]];
+            // Read 16 consecutive elements (16-bit each = 256-bit total)
+            mac_q_data_reg <= {q_rdata, 240'd0};  // First element at MSB
         end
     end
+    assign mac_q_data = mac_q_data_reg;
 
+    // =========================================================================
+    // K Buffer A: 1024 x 16-bit SRAM (dual buffer bank A)
+    // =========================================================================
+    wire        k_a_ce   = (dma_wr_en && dma_access && dma_buf_sel == 2'b01 && buf_sel == 1'b0)
+                          | (mac_k_en && buf_sel == 1'b1);
+    wire        k_a_we   = dma_wr_en && dma_access && dma_buf_sel == 2'b01 && buf_sel == 1'b0;
+    wire [9:0]  k_a_addr = k_a_we ? dma_entry : 10'd0;
+    wire [15:0] k_a_wdata = dma_wr_data[15:0];
+    wire [15:0] k_a_rdata;
+
+    sram_sp_1024x16 u_k_buf_a (
+        .clk    (clk),
+        .ce_in  (k_a_ce),
+        .we_in  (k_a_we),
+        .addr_in(k_a_addr),
+        .wd_in  (k_a_wdata),
+        .rd_out (k_a_rdata)
+    );
+
+    // =========================================================================
+    // K Buffer B: 1024 x 16-bit SRAM (dual buffer bank B)
+    // =========================================================================
+    wire        k_b_ce   = (dma_wr_en && dma_access && dma_buf_sel == 2'b01 && buf_sel == 1'b1)
+                          | (mac_k_en && buf_sel == 1'b0);
+    wire        k_b_we   = dma_wr_en && dma_access && dma_buf_sel == 2'b01 && buf_sel == 1'b1;
+    wire [9:0]  k_b_addr = k_b_we ? dma_entry : 10'd0;
+    wire [15:0] k_b_wdata = dma_wr_data[15:0];
+    wire [15:0] k_b_rdata;
+
+    sram_sp_1024x16 u_k_buf_b (
+        .clk    (clk),
+        .ce_in  (k_b_ce),
+        .we_in  (k_b_we),
+        .addr_in(k_b_addr),
+        .wd_in  (k_b_wdata),
+        .rd_out (k_b_rdata)
+    );
+
+    // K read: MAC reads from buffer NOT being written
+    logic [255:0] mac_k_data_reg;
     always_ff @(posedge clk) begin
         if (mac_k_en) begin
-            for (int i = 0; i < 16; i++) begin
-                // Read from the buffer NOT being written to (opposite of buf_sel)
-                if (buf_sel == 1'b0)
-                    mac_k_data_reg[i*16 +: 16] <= k_buf_b[i[9:0]];
-                else
-                    mac_k_data_reg[i*16 +: 16] <= k_buf_a[i[9:0]];
-            end
+            if (buf_sel == 1'b0)
+                mac_k_data_reg <= {k_b_rdata, 240'd0};
+            else
+                mac_k_data_reg <= {k_a_rdata, 240'd0};
         end
     end
+    assign mac_k_data = mac_k_data_reg;
 
+    // =========================================================================
+    // V Buffer A: 1024 x 16-bit SRAM (dual buffer bank A)
+    // =========================================================================
+    wire        v_a_ce   = (dma_wr_en && dma_access && dma_buf_sel == 2'b10 && buf_sel == 1'b0)
+                          | (mac_v_en && buf_sel == 1'b1);
+    wire        v_a_we   = dma_wr_en && dma_access && dma_buf_sel == 2'b10 && buf_sel == 1'b0;
+    wire [9:0]  v_a_addr = v_a_we ? dma_entry : 10'd0;
+    wire [15:0] v_a_wdata = dma_wr_data[15:0];
+    wire [15:0] v_a_rdata;
+
+    sram_sp_1024x16 u_v_buf_a (
+        .clk    (clk),
+        .ce_in  (v_a_ce),
+        .we_in  (v_a_we),
+        .addr_in(v_a_addr),
+        .wd_in  (v_a_wdata),
+        .rd_out (v_a_rdata)
+    );
+
+    // =========================================================================
+    // V Buffer B: 1024 x 16-bit SRAM (dual buffer bank B)
+    // =========================================================================
+    wire        v_b_ce   = (dma_wr_en && dma_access && dma_buf_sel == 2'b10 && buf_sel == 1'b1)
+                          | (mac_v_en && buf_sel == 1'b0);
+    wire        v_b_we   = dma_wr_en && dma_access && dma_buf_sel == 2'b10 && buf_sel == 1'b1;
+    wire [9:0]  v_b_addr = v_b_we ? dma_entry : 10'd0;
+    wire [15:0] v_b_wdata = dma_wr_data[15:0];
+    wire [15:0] v_b_rdata;
+
+    sram_sp_1024x16 u_v_buf_b (
+        .clk    (clk),
+        .ce_in  (v_b_ce),
+        .we_in  (v_b_we),
+        .addr_in(v_b_addr),
+        .wd_in  (v_b_wdata),
+        .rd_out (v_b_rdata)
+    );
+
+    // V read: MAC reads from buffer NOT being written
+    logic [255:0] mac_v_data_reg;
     always_ff @(posedge clk) begin
         if (mac_v_en) begin
-            for (int i = 0; i < 16; i++) begin
-                if (buf_sel == 1'b0)
-                    mac_v_data_reg[i*16 +: 16] <= v_buf_b[i[9:0]];
-                else
-                    mac_v_data_reg[i*16 +: 16] <= v_buf_a[i[9:0]];
-            end
+            if (buf_sel == 1'b0)
+                mac_v_data_reg <= {v_b_rdata, 240'd0};
+            else
+                mac_v_data_reg <= {v_a_rdata, 240'd0};
         end
     end
-
-    assign mac_q_data = mac_q_data_reg;
-    assign mac_k_data = mac_k_data_reg;
     assign mac_v_data = mac_v_data_reg;
 
     // =========================================================================
-    // Exp LUT Read Path
+    // O Buffer: 64 x 16-bit SRAM
     // =========================================================================
+    wire        o_ce   = (dma_wr_en && dma_access && dma_buf_sel == 2'b11)
+                        | o_wr_en
+                        | (dma_rd_en && dma_access);
+    wire        o_we   = (dma_wr_en && dma_access && dma_buf_sel == 2'b11) | o_wr_en;
+    wire [5:0]  o_addr = o_wr_en ? 6'd0 :
+                         (dma_wr_en ? dma_entry[5:0] : dma_rd_addr[5:0]);
+    wire [15:0] o_wdata = o_wr_en ? o_wr_data[15:0] : dma_wr_data[15:0];
+    wire [15:0] o_rdata;
+
+    sram_sp_64x16 u_o_buf (
+        .clk    (clk),
+        .ce_in  (o_ce),
+        .we_in  (o_we),
+        .addr_in(o_addr),
+        .wd_in  (o_wdata),
+        .rd_out (o_rdata)
+    );
+
+    // DMA read path
+    logic [127:0] dma_rd_data_reg;
+    always_ff @(posedge clk) begin
+        if (dma_rd_en && dma_access) begin
+            dma_rd_data_reg[15:0] <= o_rdata;
+        end
+    end
+    assign dma_rd_data = dma_rd_data_reg;
+
+    // =========================================================================
+    // Exp LUT: 256 x 16-bit ROM
+    // =========================================================================
+    wire        lut_ce = lut_access;
+    wire [7:0]  lut_addr = lut_rd_addr;
+    wire [15:0] lut_rdata;
+
+    sram_sp_256x16 u_exp_lut (
+        .clk    (clk),
+        .ce_in  (lut_ce),
+        .we_in  (1'b0),         // ROM, no writes
+        .addr_in(lut_addr),
+        .wd_in  (16'd0),
+        .rd_out (lut_rdata)
+    );
+
     always_ff @(posedge clk) begin
         if (lut_access)
-            lut_rd_data <= exp_lut[lut_rd_addr];
+            lut_rd_data <= lut_rdata;
     end
 
     // =========================================================================
     // Online Softmax Running Stats (per-row latched registers)
     // =========================================================================
-    // m_old/l_old: read by softmax at start of each tile
-    // m_new/l_new/correction: written back by softmax after each tile
     logic [39:0] m_old_reg, l_old_reg;
 
     always_ff @(posedge clk or negedge rst_n) begin
@@ -212,7 +248,6 @@ module fa_buffer_mgr (
             m_old_reg <= 40'sh80_0000_0000;  // -inf in Q8.32
             l_old_reg <= 40'h0;
         end else if (m_new != m_old_reg || l_new != l_old_reg) begin
-            // Update running stats when softmax produces new values
             m_old_reg <= m_new;
             l_old_reg <= l_new;
         end
